@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AWS 经营问数</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">VG / AMAZON US</p>
+          <h1>AWS 经营问数</h1>
+        </div>
+        <div class="header-status">
+          <div class="status-pill"><span class="status-dot"></span>数据服务在线</div>
+          <div id="identity-pill" class="identity-pill">输入令牌后显示权限</div>
+        </div>
+      </header>
+
+      <section class="query-panel" aria-labelledby="query-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">自然语言查询</p>
+            <h2 id="query-title">今天的经营数据，直接问</h2>
+          </div>
+          <span class="data-note">Amazon US · 最近同步数据</span>
+        </div>
+        <form id="ask-form">
+          <label class="sr-only" for="question">输入经营问题</label>
+          <textarea id="question" name="question" rows="3" maxlength="500" placeholder="例如：最近30天销售额最高的10个SKU是什么？" required></textarea>
+          <div class="token-row">
+            <label for="api-token">访问令牌（启用 API_AUTH_TOKEN 时填写）</label>
+            <input id="api-token" type="password" autocomplete="off" placeholder="X-API-Key" />
+          </div>
+          <label id="followup-row" class="followup-row hidden">
+            <input id="use-previous" type="checkbox" />
+            沿用上一问的指标、时间和筛选条件
+            <span id="previous-question"></span>
+          </label>
+          <div class="query-actions">
+            <div class="examples" aria-label="示例问题">
+              <button type="button" class="example" data-question="最近30天销售额最高的10个SKU是什么？">SKU 销售排名</button>
+              <button type="button" class="example" data-question="最近30天各品牌的销售额、订单数和销量分别是多少？">品牌经营概况</button>
+              <button type="button" class="example" data-question="最近30天每天的销售额趋势是多少？">销售趋势</button>
+            </div>
+            <button class="primary-button" type="submit" id="ask-button">查询数据 <span aria-hidden="true">→</span></button>
+          </div>
+        </form>
+      </section>
+
+      <section id="empty-state" class="empty-state" aria-live="polite">
+        <div class="empty-mark">?</div>
+        <h2>输入一个经营问题开始</h2>
+        <p>回答来自已接入的数据集，并附带指标口径。</p>
+      </section>
+
+      <section id="result-section" class="result-section hidden" aria-live="polite">
+        <div class="result-heading">
+          <div>
+            <p class="eyebrow">查询结果</p>
+            <h2 id="result-title">-</h2>
+          </div>
+          <span id="result-status" class="result-status">-</span>
+        </div>
+        <div id="error-box" class="error-box hidden"></div>
+        <div id="answer-summary" class="answer-summary hidden"></div>
+        <div id="summary-grid" class="summary-grid"></div>
+        <section id="chart-panel" class="chart-panel hidden" aria-label="查询结果图表">
+          <div class="chart-title">数据图表 <span id="chart-note"></span></div>
+          <canvas id="result-chart" height="260"></canvas>
+        </section>
+        <div class="table-wrap">
+          <table>
+            <thead id="result-head"></thead>
+            <tbody id="result-body"></tbody>
+          </table>
+        </div>
+        <details id="trace-details" class="trace-details hidden">
+          <summary>查看查询依据</summary>
+          <div class="trace-content">
+            <p><strong>SQL</strong></p>
+            <pre id="sql-text"></pre>
+          </div>
+        </details>
+      </section>
+
+      <section class="history-panel" aria-labelledby="history-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">本机记录</p><h2 id="history-title">最近查询</h2></div>
+          <button type="button" id="clear-history" class="text-button">清空</button>
+        </div>
+        <div id="history-list" class="history-list"><p class="history-empty">暂无查询记录</p></div>
+      </section>
+    </main>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,451 @@
+启动web端
+cd /Users/money/github-yin/VG_dw/ai_analytics
+UV_CACHE_DIR=/tmp/vg-uv-cache uv run python scripts/run_api.py
+
+http://127.0.0.1:8000/
+
+测试问题：6月上架的SKU，销量达成目标的有几个？
+返回结果：—请确认“6月”的年份，以及“销量达成目标”是否指上架满30天且30天销量达到20单的达标SKU口径？—没有找到符合条件的数据；
+
+测试问题：最近30天销售额最高的10个SKU是什么？
+返回结果正确；
+
+测试问题：最近30天每个品牌下销售额最高的SKU分别是什么？
+返回结果SQL：—SELECT seller_sku, asin, MAX(brand) AS brand,
+                       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount,
+                       SUM(units_ordered) AS units_sold
+                FROM dws_sku_tag_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)
+                GROUP BY seller_sku, asin
+                ORDER BY sales_amount DESC
+                LIMIT 10
+人工问题识别：SQL有误，没有列出不同品牌；
+
+测试问题：最近30天cuspin品牌下销售额最高的SKU是什么？
+返回结果SQL：SELECT seller_sku, asin, MAX(brand) AS brand,
+                       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount,
+                       SUM(units_ordered) AS units_sold
+                FROM dws_sku_tag_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)
+                GROUP BY seller_sku, asin
+                ORDER BY sales_amount DESC
+                LIMIT 1
+人工问题识别：SQL有误，没有筛选品牌为cuspin；
+
+测试问题：最近30天哪些SKU销售额超过10000？
+返回结果SQL：—SELECT seller_sku, asin, MAX(brand) AS brand,
+                       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount,
+                       SUM(units_ordered) AS units_sold
+                FROM dws_sku_tag_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)
+                GROUP BY seller_sku, asin
+                ORDER BY sales_amount DESC
+                LIMIT 10
+人工问题识别：结果没有筛选销售额>10000；
+
+测试问题：最近30天销量最高的5个SKU是什么？
+返回结果SQL：SELECT seller_sku, asin, brand, listing_date,
+                   units_ordered_30d, ordered_product_sales_30d,
+                   CASE WHEN units_ordered_30d >= 20 THEN '达标' ELSE '未达标' END AS success_tier
+            FROM ads_aws_sku_period_sales
+            WHERE units_ordered_30d < 20
+            ORDER BY units_ordered_30d DESC, seller_sku
+人工问题识别：from表有误，问题问的是最近30天(销售/订单日期)的销量，无关上架日期，ads_aws_sku_period_sales的units_ordered_30d指的是上架30天内的销量，应该使用dws_sku_tag_day_us表的units_ordered字段进行统计.
+
+测试问题：26年6月份，销量排名前10的sku?
+返回结果SQL：SELECT seller_sku, asin, brand, listing_date,
+                   units_ordered_30d, ordered_product_sales_30d,
+                   CASE WHEN units_ordered_30d >= 20 THEN '达标' ELSE '未达标' END AS success_tier
+            FROM ads_aws_sku_period_sales
+            WHERE units_ordered_30d < 20
+
+            ORDER BY units_ordered_30d DESC, seller_sku
+人工问题识别：from表有误，问题问的是26年6月份的销量排名前10的sku，无关上架日期，ads_aws_sku_period_sales的units_ordered_30d指的是上架30天内的销量，应该使用dws_sku_tag_day_us表的units_ordered字段进行统计，并且需要筛选出26年6月份的数据.
+
+
+测试问题：最近30天各品牌的销售额排名是什么？
+返回结果SQL：SELECT brand, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY brand
+人工问题识别：SQL有误，缺少排序语句，应该在最后加上ORDER BY sales_amount DESC。
+
+测试问题：最近一周各品牌的销售额排名是什么？
+结果返回：已识别问题意图，但当前还没有对应的安全查询模板。
+
+测试问题：最近30天各品牌的销售额、订单数和销量分别是多少？
+结果返回：已识别问题意图，但当前还没有对应的安全查询模板。
+
+测试问题：最近30天哪个品牌销售额最高？
+返回SQL：SELECT brand, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY brand
+            
+            LIMIT 1
+问题识别：SQL有误，不是最高销售额；
+
+测试问题：最近30天哪个品牌销量最高？
+返回SQL：SELECT brand, SUM(units_ordered) AS units_sold
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY brand          
+            LIMIT 1
+问题识别：SQL有误，不是最高销量；
+
+测试问题：最近30天cuspin品牌卖了多少单?
+结果返回：已识别问题意图，但当前还没有对应的安全查询模板。
+
+
+测试问题：最近30天销售额最高的是哪一天
+返回SQL：SELECT stat_dt, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY stat_dt           
+            LIMIT 1
+问题识别：SQL有误，没有判断最高销售额；
+
+测试问题：最近30天销售额最低的是哪一天？
+返回SQL：SELECT stat_dt, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY stat_dt
+            
+            LIMIT 1
+问题识别：SQL有误，没有判断最低销售额；
+
+测试问题：最近30天销售额整体是上升还是下降？
+返回SQL：SELECT stat_dt, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY stat_dt
+问题识别：只是把最近30天的销售额按天列出来了，没有判断整体是上升还是下降；
+
+问题识别：最近30天每天的销量是多少？
+返回SQL：SELECT stat_dt, SUM(units_ordered) AS units_sold
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY stat_dt
+返回结果正确；
+
+测试问题：最近30天哪个品牌退款金额最高？
+返回SQL：SELECT brand, ROUND(SUM(refund_amount), 2) AS refund_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY brand
+            
+            LIMIT 1
+问题识别：SQL有误，没有判断退款金额最高；
+
+
+
+测试问题：最近30天各品牌退款金额是多少？
+返回SQL：SELECT brand, ROUND(SUM(refund_amount), 2) AS refund_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY brand
+返回结果正确；
+
+测试问题：最近30天哪个品牌退款率最高？
+返回SQL：SELECT brand, ROUND(SUM(refund_amount) / NULLIF(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 0), 4) AS refund_rate
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY brand
+            
+            LIMIT 1
+问题识别：没有判断退款率最高；
+
+测试问题：最近30天退款金额排名是什么？
+返回SQL：SELECT brand, ROUND(SUM(refund_amount), 2) AS refund_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+            GROUP BY brand            
+            LIMIT 10
+问题识别：没有排名；
+
+最近30天整体退款率是多少？
+结果返回：已识别问题意图，但当前还没有对应的安全查询模板。
+
+测试问题：最近30天每天的高价值订单数和目标达成率是多少？
+结果返回：目标达成率（north_star_achievement_rate）在可用语义上下文中不存在，请确认是否使用该指标或提供正确的指标名称。
+
+测试问题：近30天有多少天没有完成高价值订单目标？
+返回SQL：WITH daily AS (
+                SELECT stat_dt, SUM(high_value_order_cnt) AS high_value_order_count
+                FROM dws_brand_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+                GROUP BY stat_dt
+            ), targets AS (
+                SELECT stat_month, MAX(daily_target) AS daily_target
+                FROM dim_north_star_target
+                GROUP BY stat_month
+            )
+            SELECT d.stat_dt,
+                   d.high_value_order_count,
+                   t.daily_target,
+                   ROUND(d.high_value_order_count * 1.0 / NULLIF(t.daily_target, 0), 4)
+                       AS achievement_rate
+            FROM daily d
+            LEFT JOIN targets t ON STRFTIME(d.stat_dt, '%Y-%m') = t.stat_month
+            ORDER BY d.stat_dt
+问题识别：没有进行未完成判断，把近三十天的全部结果都显示出来了；
+
+测试问题：最近30天哪个品牌贡献的高价值订单最多？
+结果返回：已识别问题意图，但当前还没有对应的安全查询模板。
+
+测试问题：哪几天高价值订单目标没有达成？
+结果返回：请问要查询哪个时间范围（如最近30天或上个月）？以及是否限定某个品牌？
+个人疑问：问题澄清似乎没有回应的窗口
+
+测试问题：26年6月哪几天高价值订单目标没有达成？
+结果返回：请问高价值订单目标的达成标准是什么？例如目标值是多少，或达成率阈值如何定义？
+
+测试结果：最近30天高价值订单达成率最高是哪天？
+返回SQL：WITH daily AS (
+                SELECT stat_dt, SUM(high_value_order_cnt) AS high_value_order_count
+                FROM dws_brand_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+                GROUP BY stat_dt
+            ), targets AS (
+                SELECT stat_month, MAX(daily_target) AS daily_target
+                FROM dim_north_star_target
+                GROUP BY stat_month
+            )
+            SELECT d.stat_dt,
+                   d.high_value_order_count,
+                   t.daily_target,
+                   ROUND(d.high_value_order_count * 1.0 / NULLIF(t.daily_target, 0), 4)
+                       AS achievement_rate
+            FROM daily d
+            LEFT JOIN targets t ON STRFTIME(d.stat_dt, '%Y-%m') = t.stat_month
+            ORDER BY d.stat_dt
+问题识别：没有判断近30天哪天的达成率最高，只是按照订单日期排序了；
+
+测试问题：上架满30天但销量未达标的SKU有哪些？
+返回SQL：SELECT seller_sku, asin, brand, listing_date,
+                   units_ordered_30d, ordered_product_sales_30d,
+                   CASE WHEN units_ordered_30d >= 20 THEN '达标' ELSE '未达标' END AS success_tier
+            FROM ads_aws_sku_period_sales
+            WHERE units_ordered_30d < 20
+              
+            ORDER BY units_ordered_30d DESC, seller_sku
+返回结果正确，但是没有进行行数限制，可以加个时间限定的询问之类的？
+
+测试问题：上架满30天的SKU中哪些销量较低？
+返回结果：请问“销量较低”的具体阈值是多少？例如低于多少单（如低于20单）？
+
+测试问题：哪些SKU已经上架但还没有销量？
+返回结果：请问“已上架”的时间范围如何界定？例如是最近30天内上架的SKU，还是全部历史已上架SKU？另外“没有销量”是指30天销量为0，还是历史累计销量为0？
+
+测试问题：新品上架后的销售表现如何？
+返回结果：请问您想查看哪个指标（如销售额、销量等）？以及时间范围（如最近30天、上个月）和维度（如按SKU、品牌或按天趋势）？
+
+测试问题：最近有哪些新品上架满30天？
+返回结果：请问“上架满30天”的时间口径如何界定？是希望筛选上架天数≥30天的SKU，还是查询最近30天内新上架且已满30天的商品？另外是否需要限定具体店铺或品牌？
+
+
+调整后1.0测试
+问题1:最近30天cuspin品牌下销售额最高的SKU是什么？
+返回SQL：SELECT seller_sku, asin, MAX(brand) AS brand,
+                       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+                FROM dws_sku_tag_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)
+                  AND brand = 'Cuspin'
+                GROUP BY seller_sku, asin
+                
+                ORDER BY sales_amount DESC
+                LIMIT 1
+返回结果正确；
+
+问题2:最近30天哪些SKU销售额超过10000？
+返回SQL：SELECT seller_sku, asin, MAX(brand) AS brand,
+                       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+                FROM dws_sku_tag_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)
+                  
+                GROUP BY seller_sku, asin
+                HAVING sales_amount > 10000
+                ORDER BY sales_amount DESC
+                LIMIT 10
+返回结果正确；
+
+问题3:26年6月份销量排名前10的SKU？
+返回SQL：SELECT seller_sku, asin, brand, listing_date,
+                   units_ordered_30d, ordered_product_sales_30d,
+                   CASE WHEN units_ordered_30d >= 20 THEN '达标' ELSE '未达标' END AS success_tier
+            FROM ads_aws_sku_period_sales
+            WHERE units_ordered_30d < 20
+              
+            ORDER BY units_ordered_30d DESC, seller_sku
+问题识别：from表有误，问题问的是26年6月份的销量排名前10的sku，无关上架日期，ads_aws_sku_period_sales的units_ordered_30d指的是上架30天内的销量，应该使用dws_sku_tag_day_us表的units_ordered字段进行统计，并且需要筛选出订单日期为26年6月份的数据。
+
+问题4:最近30天哪个品牌销售额最高？
+返回SQL：SELECT brand, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+              
+            GROUP BY brand
+            
+            ORDER BY sales_amount DESC
+            LIMIT 1
+返回结果正确；
+
+问题5:最近30天哪个品牌销量最高？
+返回SQL：SELECT brand, SUM(units_ordered) AS units_sold
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+              
+            GROUP BY brand
+            
+            ORDER BY units_sold DESC
+            LIMIT 1
+返回结果正确；
+
+问题6:最近30天销售额最低的是哪一天？
+返回SQL：SELECT stat_dt, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+              
+            GROUP BY stat_dt
+            
+            ORDER BY sales_amount DESC
+            LIMIT 1
+返回结果正确；
+
+测试2.0
+问题1:26年6月份，销量排名前10的SKU？
+返回SQL：SELECT seller_sku, asin, MAX(brand) AS brand,
+                       SUM(units_ordered) AS units_sold
+                FROM dws_sku_tag_day_us
+                WHERE 1 = 1
+                  AND STRFTIME(stat_dt, '%Y-%m') = '2026-06'
+                GROUP BY seller_sku, asin
+                
+                ORDER BY units_sold DESC
+                LIMIT 10
+问题识别：SQL能执行，但没有查询出结果（没有找到符合条件的数据），这不太合理，是否SQL错误？
+已解决：文件数据只有八月的数据，日期换成2026-08就能查询出结果。
+
+问题2:最近30天销售额最低的是哪一天？
+返回SQL：SELECT stat_dt, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+              
+            GROUP BY stat_dt
+            
+            ORDER BY sales_amount ASC
+            LIMIT 1
+返回结果正确。
+
+
+测试3.0
+问题1:最近30天每个品牌销售额最高的SKU
+返回SQL：SELECT seller_sku, asin, MAX(brand) AS brand,
+                       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+                FROM dws_sku_tag_day_us
+                WHERE 1 = 1
+                  AND stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)
+                GROUP BY seller_sku, asin
+                ORDER BY sales_amount DESC
+                LIMIT 10
+问题识别：仍然没有区分不同品牌销售额最高；
+修正重启后
+返回SQL：WITH sku_sales AS (
+                SELECT brand, seller_sku, asin,
+                       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+                FROM dws_sku_tag_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)
+                GROUP BY brand, seller_sku, asin
+            ), ranked AS (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY brand ORDER BY sales_amount DESC) AS brand_rank
+                FROM sku_sales
+            )
+            SELECT brand, seller_sku, asin, sales_amount
+            FROM ranked
+            WHERE brand_rank <= 1
+            ORDER BY brand, sales_amount DESC
+返回结果正确；
+
+问题2：最近30天销售额整体是上升还是下降
+返回SQL：SELECT stat_dt, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+              
+            GROUP BY stat_dt
+问题识别：仍然没有上升和下降的判断，只是列出最近30天。
+修正重启后：
+返回SQL：WITH daily AS (
+                SELECT stat_dt, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+                FROM dws_brand_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+                GROUP BY stat_dt
+            ), boundary AS (
+                SELECT FIRST_VALUE(sales_amount) OVER (ORDER BY stat_dt) AS first_day_sales,
+                       LAST_VALUE(sales_amount) OVER (ORDER BY stat_dt ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS last_day_sales
+                FROM daily
+            )
+            SELECT first_day_sales, last_day_sales,
+                   CASE WHEN last_day_sales > first_day_sales THEN '上升'
+                        WHEN last_day_sales < first_day_sales THEN '下降'
+                        ELSE '持平' END AS trend
+            FROM boundary
+            LIMIT 1
+返回结果正确；
+
+测试4.0
+问题1:最近30天整体退款率是多少？
+返回SQL：SELECT ROUND(
+                SUM(refund_amount) /
+                NULLIF(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 0), 4
+            ) AS refund_rate
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+返回结果正确；
+
+问题2:最近30天有多少天没有完成高价值订单目标？
+返回SQL：WITH daily AS (
+                SELECT stat_dt, SUM(high_value_order_cnt) AS high_value_order_count
+                FROM dws_brand_day_us
+                WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+                GROUP BY stat_dt
+            ), targets AS (
+                SELECT stat_month, MAX(daily_target) AS daily_target
+                FROM dim_north_star_target
+                GROUP BY stat_month
+            )
+            SELECT COUNT(*) AS days_without_target
+            FROM daily d
+            LEFT JOIN targets t ON STRFTIME(d.stat_dt, '%Y-%m') = t.stat_month
+            WHERE d.high_value_order_count < t.daily_target
+返回结果正确；
+
+
+测试5.0
+问题1:最近30天销售额最高的10个SKU是什么？
+返回SQL：SELECT seller_sku, asin, MAX(brand) AS brand,
+                       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+                FROM dws_sku_tag_day_us
+                WHERE 1 = 1
+                  AND stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)                  
+                GROUP BY seller_sku, asin           
+                ORDER BY sales_amount DESC
+                LIMIT 10
+返回结果正确；
+
+问题2:最近30天哪个品牌销售额最高？
+返回结果SQL：SELECT brand, ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)              
+            GROUP BY brand            
+            ORDER BY sales_amount DESC
+            LIMIT 1
+返回结果正确；
+
+问题3:最近30天整体退款率是多少？
+返回结果SQL：SELECT ROUND(
+                SUM(refund_amount) /
+                NULLIF(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 0), 4
+            ) AS refund_rate
+            FROM dws_brand_day_us
+            WHERE stat_dt >= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_brand_day_us)
+返回结果正确；

@@ -1,0 +1,33 @@
+version: 1
+description: RAG关键词检索基线的Recall@K评测，不调用外部模型。
+questions:
+  - id: retrieval_001
+    question: 最近30天销售额排名前3的店铺是什么？
+    relevant_documents: [metric:sales_amount, dataset:dws_sku_tag_day_us, example:shop_sales_topn]
+  - id: retrieval_002
+    question: 近一周整体退款率是多少？
+    relevant_documents: [metric:refund_rate, dataset:dws_brand_day_us, example:overall_refund_rate]
+  - id: retrieval_003
+    question: 最近90天各品牌销量是多少？
+    relevant_documents: [metric:units_sold, dataset:dws_brand_day_us]
+  - id: retrieval_004
+    question: 2026年8月销售额最高的10个SKU是什么？
+    relevant_documents: [metric:sales_amount, dataset:dws_sku_tag_day_us, example:sku_monthly_sales_topn]
+  - id: retrieval_005
+    question: 上架满30天但销量没有达到20单的SKU有哪些？
+    relevant_documents: [metric:sku_units_30d, dataset:ads_aws_sku_period_sales, example:sku_lifecycle_target, relationship:sku_lifecycle_window]
+  - id: retrieval_006
+    question: 最近30天每天的高价值订单数和目标达成率是多少？
+    relevant_documents: [metric:high_value_order_cnt, metric:north_star_achievement_rate, dataset:dws_brand_day_us, relationship:brand_daily_to_north_star_target, example:north_star_daily]
+  - id: retrieval_007
+    question: 每个品牌销售额最高的SKU
+    relevant_documents: [metric:sales_amount, dataset:dws_sku_tag_day_us]
+  - id: retrieval_008
+    question: 最近30天整体退款金额是多少？
+    relevant_documents: [metric:refund_amount, dataset:dws_brand_day_us]
+  - id: retrieval_009
+    question: 哪些SKU广告花费最高？
+    relevant_documents: [metric:ad_spend_30d, dataset:ads_aws_sku_period_sales]
+  - id: retrieval_010
+    question: 各品牌近30天卖了多少单？
+    relevant_documents: [metric:order_count, dataset:dws_brand_day_us]

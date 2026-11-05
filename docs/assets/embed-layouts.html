@@ -1,0 +1,522 @@
+<title>问数区域的三种摆法</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --ground: #EDEFF3;
+    --panel: #FFFFFF;
+    --panel-2: #F6F7FA;
+    --ink: #161A21;
+    --ink-2: #4A5260;
+    --ink-3: #7C8595;
+    --line: #D6DAE3;
+    --line-strong: #B9C0CD;
+    --qb: #55617D;
+    --qb-soft: #E4E8F0;
+    --qb-line: #C3CAD8;
+    --mine: #A62E63;
+    --mine-soft: #F8E5ED;
+    --mine-line: #E3B6C9;
+    --shadow: 0 1px 2px rgba(22,26,33,.06), 0 8px 24px -12px rgba(22,26,33,.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0F1218;
+      --panel: #181C24;
+      --panel-2: #1E232C;
+      --ink: #E8EBF0;
+      --ink-2: #A7AFBD;
+      --ink-3: #79828F;
+      --line: #2A3038;
+      --line-strong: #3B434F;
+      --qb: #93A2BF;
+      --qb-soft: #222936;
+      --qb-line: #39414F;
+      --mine: #E8749F;
+      --mine-soft: #32202A;
+      --mine-line: #5C3648;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0F1218;
+    --panel: #181C24;
+    --panel-2: #1E232C;
+    --ink: #E8EBF0;
+    --ink-2: #A7AFBD;
+    --ink-3: #79828F;
+    --line: #2A3038;
+    --line-strong: #3B434F;
+    --qb: #93A2BF;
+    --qb-soft: #222936;
+    --qb-line: #39414F;
+    --mine: #E8749F;
+    --mine-soft: #32202A;
+    --mine-line: #5C3648;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding-block: 0;
+    padding-inline: 20px;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 74rem; margin-inline: auto; padding-block: 56px 80px; }
+
+  /* ---------- header ---------- */
+  .masthead { max-width: 46rem; margin-bottom: 44px; }
+  .eyebrow {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px; font-weight: 500;
+    letter-spacing: .16em; text-transform: uppercase;
+    color: var(--ink-3); margin: 0 0 14px;
+  }
+  h1 {
+    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-weight: 700; font-size: clamp(28px, 5vw, 40px);
+    line-height: 1.25; letter-spacing: -.01em;
+    margin: 0 0 16px; text-wrap: balance;
+  }
+  .lede { margin: 0; color: var(--ink-2); max-width: 40rem; }
+  .disclaimer {
+    margin-top: 22px; padding: 11px 14px;
+    border-left: 3px solid var(--line-strong);
+    background: var(--panel);
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+  .disclaimer b { color: var(--ink-2); font-weight: 500; }
+
+  /* ---------- legend ---------- */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 10px 26px;
+    margin: 0 0 40px; padding: 14px 18px;
+    background: var(--panel); border: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
+  .swatch { width: 13px; height: 13px; border-radius: 2px; flex: none; }
+  .swatch.qb { background: var(--qb); }
+  .swatch.mine { background: var(--mine); }
+
+  /* ---------- option blocks ---------- */
+  .opt {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    margin-bottom: 34px;
+    padding: 26px 26px 24px;
+  }
+  .opt-head { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 22px; }
+  .num {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12px; font-weight: 700; letter-spacing: .06em;
+    color: var(--ink-3);
+    border: 1px solid var(--line-strong); border-radius: 2px;
+    padding: 3px 7px; flex: none; margin-top: 4px;
+  }
+  .opt-head h2 {
+    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-size: 21px; font-weight: 600; margin: 0 0 5px; line-height: 1.4;
+    text-wrap: balance;
+  }
+  .sub { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .sub b { font-weight: 500; }
+
+  .k { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .88em; font-weight: 500; }
+  .k.qb { color: var(--qb); }
+  .k.mine { color: var(--mine); }
+
+  /* ---------- wireframe board ---------- */
+  .board-wrap { overflow-x: auto; padding-bottom: 6px; }
+  .board {
+    min-width: 580px;
+    border: 1px solid var(--line-strong);
+    background: var(--panel-2);
+    padding: 9px;
+    display: grid;
+    gap: 7px;
+  }
+  .board.b1 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto 78px 82px;
+  }
+  .board.b2 { grid-template-columns: 1.55fr 1fr; grid-template-rows: 30px 1fr; }
+  .board.b3 { grid-template-columns: 132px 1fr; grid-template-rows: 1fr; }
+
+  .bar {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 7px;
+    background: var(--qb-soft);
+    border: 1px solid var(--qb-line);
+    border-radius: 2px;
+    padding: 5px 9px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10px; letter-spacing: .04em;
+    color: var(--qb); text-transform: uppercase;
+  }
+  .bar em {
+    font-style: normal; background: var(--panel); border: 1px solid var(--qb-line);
+    border-radius: 2px; padding: 1px 6px;
+
+  }
+  .bar .spacer { margin-left: auto; opacity: .65; }
+
+  .cell {
+    border: 1px solid var(--qb-line);
+    background: var(--panel);
+    padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 6px;
+    min-width: 0;
+  }
+  .cell .lbl {
+    font-size: 11px; color: var(--qb); font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .cell.mine { border: 1.5px solid var(--mine); background: var(--mine-soft); }
+  .cell.mine .lbl { color: var(--mine); }
+  .cell.span2 { grid-column: span 2; }
+
+  /* tiny chart glyphs */
+  .glyph { flex: 1; display: flex; align-items: flex-end; gap: 5px; min-height: 26px; }
+  .glyph i { display: block; flex: 1; background: var(--qb); opacity: .55; border-radius: 1px; }
+  .glyph i:nth-child(1) { height: 42%; }
+  .glyph i:nth-child(2) { height: 70%; }
+  .glyph i:nth-child(3) { height: 55%; }
+  .glyph i:nth-child(4) { height: 88%; }
+  .glyph i:nth-child(5) { height: 66%; }
+  .donut {
+    flex: 1; min-height: 30px; max-width: 62px;
+    border-radius: 50%;
+    background: conic-gradient(var(--qb) 0 62%, var(--qb-soft) 62% 100%);
+    opacity: .72;
+  }
+
+  /* the ask panel */
+  .ask {
+    border-top: 1px dashed var(--mine-line);
+    padding-top: 6px; display: flex; flex-direction: column; gap: 5px;
+    font-size: 11px; color: var(--ink-2);
+  }
+  .bubble {
+    background: var(--panel); border: 1px solid var(--mine-line);
+    border-radius: 2px; padding: 3px 7px;
+    font-size: 10.5px; color: var(--ink-2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .entry {
+    display: flex; align-items: center; gap: 6px;
+    border: 1px solid var(--mine-line); border-radius: 2px;
+    background: var(--panel); padding: 4px 7px;
+    font-size: 10.5px; color: var(--ink-3);
+  }
+  .entry::after {
+    content: ""; margin-left: auto;
+    width: 15px; height: 15px; flex: none; border-radius: 2px;
+    background: var(--mine);
+  }
+
+  .tagline {
+    position: absolute; top: -1px; right: -1px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase;
+    background: var(--mine); color: var(--panel);
+    padding: 2px 6px;
+  }
+  .cellwrap { position: relative; display: flex; }
+
+  /* layout 2 outer shell */
+  .shell { grid-column: 1 / -1; display: contents; }
+  .chrome-top {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 9px;
+    border: 1.5px solid var(--mine);
+    background: var(--mine-soft);
+    padding: 5px 10px;
+    font-size: 10.5px; font-weight: 500; color: var(--mine);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    letter-spacing: .04em;
+  }
+  .chrome-top .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mine); }
+
+  .embed-region {
+    border: 1px solid var(--qb-line); background: var(--panel);
+    padding: 9px; display: flex; flex-direction: column; gap: 6px;
+    position: relative;
+  }
+  .chat-region {
+    border: 1.5px solid var(--mine); background: var(--mine-soft);
+    padding: 9px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .region-label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .mini-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; }
+  .mini-cell { border: 1px solid var(--qb-line); background: var(--panel-2); }
+
+  /* layout 3 portal menu */
+  .menu {
+    border: 1.5px solid var(--mine); background: var(--mine-soft);
+    padding: 9px; display: flex; flex-direction: column; gap: 6px;
+  }
+  .menu-item {
+    font-size: 11px; color: var(--ink-2); padding: 3px 7px;
+    border-left: 2px solid transparent;
+  }
+  .menu-item.on {
+    color: var(--mine); font-weight: 500;
+    border-left-color: var(--mine); background: var(--panel);
+  }
+  .page-region {
+    border: 1.5px solid var(--mine); background: var(--panel);
+    padding: 10px; display: flex; flex-direction: column; gap: 7px;
+  }
+
+  /* ---------- notes ---------- */
+  .notes {
+    list-style: none; margin: 20px 0 0; padding: 0;
+    display: grid; gap: 7px;
+    font-size: 13.5px; color: var(--ink-2);
+  }
+  .notes li { padding-left: 15px; position: relative; }
+  .notes li::before {
+    content: ""; position: absolute; left: 0; top: .68em;
+    width: 5px; height: 5px; background: var(--line-strong); border-radius: 50%;
+  }
+  .notes b { color: var(--ink); font-weight: 500; }
+  .verdict {
+    display: inline-block; font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: .04em;
+    padding: 1px 7px; border-radius: 2px;
+    border: 1px solid var(--mine-line); color: var(--mine); background: var(--mine-soft);
+  }
+  .verdict.no { border-color: var(--line-strong); color: var(--ink-3); background: transparent; }
+
+  /* ---------- constraints ---------- */
+  .constraints {
+    margin-top: 46px; padding-top: 30px;
+    border-top: 1px solid var(--line-strong);
+  }
+  .constraints h2 {
+    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-size: 19px; font-weight: 600; margin: 0 0 6px;
+  }
+  .constraints > p { margin: 0 0 20px; color: var(--ink-2); font-size: 14px; }
+  .grid-3 {
+    display: grid; gap: 1px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    background: var(--line); border: 1px solid var(--line);
+  }
+  .fact { background: var(--panel); padding: 16px 17px; }
+  .fact h3 {
+    font-size: 13px; font-weight: 700; margin: 0 0 6px; color: var(--ink);
+    display: flex; align-items: baseline; gap: 7px;
+  }
+  .fact h3 code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10px; font-weight: 400; color: var(--mine);
+    letter-spacing: .04em;
+  }
+  .fact p { margin: 0; font-size: 13px; color: var(--ink-2); line-height: 1.7; }
+
+  footer {
+    margin-top: 44px; padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--ink-3);
+  }
+  footer a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+  footer a:focus-visible, a:focus-visible { outline: 2px solid var(--mine); outline-offset: 2px; }
+
+  @media (max-width: 560px) {
+    body { padding-inline: 16px; }
+    .wrap { padding-block: 36px 56px; }
+    .opt { padding: 20px 16px 18px; }
+    .opt-head { gap: 12px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Quick BI × 自有问数服务</p>
+    <h1>问数区域的三种摆法</h1>
+    <p class="lede">把自己的问数服务接进 Quick BI，位置不止「看板旁边」一种。下面三张是<b>示意图</b>——画的是区域的归属和边界，不是产品截图。</p>
+    <p class="disclaimer">灰蓝 = Quick BI 平台的地盘，品红 = 你的服务的领地。<b>看颜色就能判断谁在谁里面。</b></p>
+  </header>
+
+  <div class="legend">
+    <span><i class="swatch qb"></i>Quick BI 仪表板 / 门户</span>
+    <span><i class="swatch mine"></i>你的问数服务</span>
+  </div>
+
+  <!-- 01 -->
+  <section class="opt">
+    <div class="opt-head">
+      <span class="num">01</span>
+      <div>
+        <h2>看板里挖一块</h2>
+        <p class="sub">用仪表板自带的<b class="k qb">内嵌页面控件</b>（Iframe 控件），把你的问数区当成看板里的一个图表格子。</p>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <div class="board b1">
+        <div class="bar">筛选栏 <em>日期</em><em>店铺</em><em>品牌</em><span class="spacer">仪表板</span></div>
+        <div class="cell"><span class="lbl">销售额趋势</span><div class="glyph"><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="cell"><span class="lbl">店铺排行</span><div class="glyph"><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="cell"><span class="lbl">退款率</span><div class="donut"></div></div>
+        <div class="cellwrap span2" style="grid-column: span 2;">
+          <div class="cell mine" style="flex:1;">
+            <span class="tagline">内嵌 iframe</span>
+            <span class="lbl">你的问数区</span>
+            <div class="ask">
+              <div class="bubble">最近30天销售额最高的10个SKU？</div>
+              <div class="entry">继续追问…</div>
+            </div>
+          </div>
+        </div>
+        <div class="cell"><span class="lbl">毛利率</span><div class="glyph"><i></i><i></i><i></i><i></i><i></i></div></div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><b>像「旁边一个独立区域」吗？</b><span class="verdict no">不像</span> 它是看板网格里的<b>一个格子</b>，和图表并排、被同一套布局约束。</li>
+      <li><b>代价：</b>内嵌内容是独立的，<b>不能和看板筛选联动</b>——用户在看板选了「US 店铺」，你的问数区不会跟着变。</li>
+      <li><b>最省事：</b>不用做外壳页面，也不用买报表嵌入，配个 URL 就行。</li>
+    </ul>
+  </section>
+
+  <!-- 02 -->
+  <section class="opt">
+    <div class="opt-head">
+      <span class="num">02</span>
+      <div>
+        <h2>你的页面套住看板</h2>
+        <p class="sub">自己做外壳，左边嵌 <b class="k qb">Quick BI 看板</b>，右边是你的问数区。这才是字面意义上的「旁边」。</p>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <div class="board b2">
+        <div class="chrome-top"><span class="dot"></span>你的系统 · 顶部导航</div>
+        <div class="embed-region">
+          <span class="region-label">Quick BI 看板（报表嵌入 / JS SDK）</span>
+          <div class="bar">筛选栏 <em>日期</em><em>店铺</em><span class="spacer">嵌入区</span></div>
+          <div class="mini-row">
+            <div class="mini-cell"></div>
+            <div class="mini-cell"></div>
+            <div class="mini-cell"></div>
+          </div>
+        </div>
+        <div class="chat-region">
+          <span class="region-label" style="color: var(--mine);">你的问数服务</span>
+          <div class="ask" style="border-top: 0; padding-top: 0;">
+            <div class="bubble">这些店铺里哪个退款率最高？</div>
+            <div class="bubble" style="border-color: var(--mine);">US_A 退款率 4.7%，最高。</div>
+            <div class="entry">问点什么…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><b>像「旁边一个独立区域」吗？</b><span class="verdict">就是这个</span> 左右分栏，问数是常驻的窄栏，看板是主区。</li>
+      <li><b>代价：</b>外壳页面、登录态、看板嵌入 ticket 都得自己做；走 <b>JS SDK</b> 还要求 Quick BI <b>专业版</b>。</li>
+      <li><b>好处：</b>你的问数区拿到完整高度和宽度，能做多轮对话、结果表格、图表，不受看板格子限制。</li>
+    </ul>
+  </section>
+
+  <!-- 03 -->
+  <section class="opt">
+    <div class="opt-head">
+      <span class="num">03</span>
+      <div>
+        <h2>门户里挂一个菜单</h2>
+        <p class="sub">在 <b class="k qb">数据门户</b>加一个菜单项，点开整页就是你的服务。不并列，是切换。</p>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <div class="board b3">
+        <div class="menu">
+          <span class="region-label" style="color: var(--mine);">数据门户</span>
+          <span class="menu-item">经营总览</span>
+          <span class="menu-item">店铺明细</span>
+          <span class="menu-item on">智能问数</span>
+          <span class="menu-item">报表下载</span>
+        </div>
+        <div class="page-region">
+          <span class="region-label" style="color: var(--mine);">你的服务（整页）</span>
+          <div class="ask" style="border-top: 0; padding-top: 0;">
+            <div class="bubble">上个月哪个品牌卖得最好？</div>
+            <div class="bubble" style="border-color: var(--mine);">2026-09 销售额第一是 Cuspin，¥243,860。</div>
+            <div class="bubble">那它的退款率呢？</div>
+            <div class="entry">问点什么…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><b>像「旁边一个独立区域」吗？</b><span class="verdict no">不像</span> 和看板是<b>两个页面</b>，用户点菜单来回切。</li>
+      <li><b>好处：</b>整页都是你的，交互最自由；门户菜单能统一管权限入口。</li>
+      <li><b>代价：</b>用户看数时想顺手问一句，得先离开看板——体验上最割裂。</li>
+    </ul>
+  </section>
+
+  <section class="constraints">
+    <h2>三种摆法都要过的关</h2>
+    <p>不管选哪种，下面几条是硬约束，面试被追问「落地时踩过什么坑」可以直接讲。</p>
+    <div class="grid-3">
+      <div class="fact">
+        <h3>必须 HTTPS <code>iframe widget</code></h3>
+        <p>内嵌页面控件的地址必须以 <code style="font-family:'JetBrains Mono',monospace;font-size:12px;">https://</code> 开头，http 页面直接不给嵌。</p>
+      </div>
+      <div class="fact">
+        <h3>对方可以被嵌 <code>X-Frame-Options</code></h3>
+        <p>你的服务如果返回 <code style="font-family:'JetBrains Mono',monospace;font-size:12px;">X-Frame-Options: DENY</code> 或限制性 CSP，页面上就是一片空白——不是配置错了，是被浏览器拦了。</p>
+      </div>
+      <div class="fact">
+        <h3>跨域 / Cookie 校验 <code>403</code></h3>
+        <p>嵌入页会和发起页校验 Header 与 Cookie 是否一致。用<b>域名</b>而不是 IP 访问，且后缀与系统域名保持一致。</p>
+      </div>
+      <div class="fact">
+        <h3>不联动 <code>filter</code></h3>
+        <p>内嵌内容与看板的筛选、联动相互隔离。想让问数「知道用户在看哪个店铺」，得自己传参，不能指望看板给。</p>
+      </div>
+      <div class="fact">
+        <h3>平台自己二选一 <code>小Q</code></h3>
+        <p>官方说明：通过增强嵌入方案嵌到第三方系统的仪表板，<b>不支持仪表板小Q问数</b>。两条路平台已经帮你分开了。</p>
+      </div>
+      <div class="fact">
+        <h3>权限口径要自己对齐 <code>RLS</code></h3>
+        <p>小Q 走 Quick BI 的行级权限，你的服务走 <code style="font-family:'JetBrains Mono',monospace;font-size:12px;">X-API-Key</code> + 授权店铺配置。两套体系下同一人看到的数可能不一致——这才是真正要提前想的问题。</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    依据阿里云官方文档整理：
+    <a href="https://help.aliyun.com/zh/quick-bi/user-guide/configure-an-iframe-widget">在仪表板中添加内嵌页面控件</a>、
+    <a href="https://help.aliyun.com/zh/quick-bi/user-guide/embedded-sdk-usage-guide">嵌入 JS SDK</a>、
+    <a href="https://help.aliyun.com/zh/quick-bi/user-guide/embedded-analysis-scheme-for-smart-q-a-security-enhancement">智能小Q集成</a>、
+    <a href="https://help.aliyun.com/zh/document_detail/705401.html">嵌入后无法问数 403</a>。
+    图示为示意，非产品界面。
+  </footer>
+
+</div>

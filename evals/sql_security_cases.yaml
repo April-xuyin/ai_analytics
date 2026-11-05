@@ -1,0 +1,11 @@
+version: 1
+cases:
+  - {id: safe_select, expected: allowed, sql: "SELECT brand, SUM(ordered_product_sales) AS sales_amount FROM dws_brand_day_us GROUP BY brand"}
+  - {id: safe_cte, expected: allowed, sql: "WITH x AS (SELECT brand, refund_amount FROM dws_brand_day_us) SELECT brand, SUM(refund_amount) AS refund_amount FROM x GROUP BY brand"}
+  - {id: write_drop, expected: denied, sql: "DROP TABLE dws_brand_day_us"}
+  - {id: stacked_statement, expected: denied, sql: "SELECT brand FROM dws_brand_day_us; DELETE FROM dws_brand_day_us"}
+  - {id: unknown_table, expected: denied, sql: "SELECT * FROM secret_orders"}
+  - {id: system_table, expected: denied, sql: "SELECT * FROM information_schema.tables"}
+  - {id: parquet_read, expected: denied, sql: "SELECT * FROM read_parquet('/etc/passwd')"}
+  - {id: file_read, expected: denied, sql: "SELECT read_file('/etc/passwd')"}
+  - {id: unknown_column, expected: denied, sql: "SELECT secret_margin FROM dws_brand_day_us"}

@@ -1,0 +1,128 @@
+version: 1
+description: 通用查询规划器的确定性组合评测，不调用大模型。
+
+cases:
+  - id: plan_brand_multi_metric
+    intent:
+      metric: sales_amount
+      metrics: [sales_amount, order_count, units_sold]
+      dimensions: [brand]
+      time_range: last_30_days
+    expected_status: success
+    expected_dataset: dws_brand_day_us
+    sql_contains: [GROUP BY brand, AS sales_amount, AS order_count, AS units_sold]
+    execute_local: true
+
+  - id: plan_shop_top3
+    intent:
+      metric: sales_amount
+      dimensions: [shop_code]
+      time_range: last_30_days
+      sort: descending
+      limit: 3
+    expected_status: success
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [GROUP BY shop_code, ORDER BY sales_amount DESC, LIMIT 3]
+    execute_local: true
+
+  - id: plan_sku_sales_refund
+    intent:
+      metric: sales_amount
+      metrics: [sales_amount, refund_amount]
+      dimensions: [seller_sku, asin]
+      time_range: last_7_days
+    expected_status: success
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [GROUP BY seller_sku, asin, AS refund_amount]
+    execute_local: true
+
+  - id: plan_brand_refund_rate
+    intent:
+      metric: refund_rate
+      dimensions: [brand]
+      time_range: last_7_days
+      sort: descending
+    expected_status: success
+    expected_dataset: dws_brand_day_us
+    sql_contains: [NULLIF, GROUP BY brand, ORDER BY refund_rate DESC]
+    execute_local: true
+
+  - id: plan_brand_filter
+    intent:
+      metric: sales_amount
+      dimensions: [seller_sku, asin]
+      time_range: last_30_days
+      filters: {brand: Cuspin}
+      sort: descending
+      limit: 10
+    expected_status: success
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: ["brand = 'Cuspin'", LIMIT 10]
+    execute_local: true
+
+  - id: plan_sales_threshold
+    intent:
+      metric: sales_amount
+      dimensions: [seller_sku, asin]
+      time_range: last_30_days
+      filters: {sales_amount_min: "10000"}
+    expected_status: success
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [HAVING sales_amount > 10000]
+    execute_local: true
+
+  - id: plan_bottom_brand_sales
+    intent:
+      metric: sales_amount
+      dimensions: [brand]
+      time_range: last_90_days
+      sort: ascending
+      limit: 5
+    expected_status: success
+    expected_dataset: dws_brand_day_us
+    sql_contains: [ORDER BY sales_amount ASC, LIMIT 5]
+    execute_local: true
+
+  - id: plan_monthly_sku_sales
+    intent:
+      metric: sales_amount
+      dimensions: [seller_sku, asin]
+      filters: {stat_month: 2026-08}
+      sort: descending
+      limit: 10
+    expected_status: success
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [2026-08, LIMIT 10]
+    execute_local: true
+
+  - id: plan_missing_time
+    intent:
+      metric: sales_amount
+      dimensions: [brand]
+    expected_status: clarification_needed
+    expected_error_contains: 时间范围
+
+  - id: plan_unsafe_shop_orders
+    intent:
+      metric: order_count
+      dimensions: [shop_code]
+      time_range: last_30_days
+    expected_status: unsupported
+    expected_error_contains: 重复计算
+
+  - id: plan_unknown_dimension
+    intent:
+      metric: sales_amount
+      dimensions: [operator]
+      time_range: last_30_days
+    expected_status: unsupported
+    expected_error_contains: 没有数据集同时支持
+
+  - id: plan_unknown_filter
+    intent:
+      metric: sales_amount
+      dimensions: [brand]
+      time_range: last_30_days
+      filters: {gross_margin_pct_max: "0.2"}
+    expected_status: unsupported
+    expected_error_contains: 不支持过滤条件

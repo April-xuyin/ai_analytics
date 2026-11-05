@@ -1,0 +1,398 @@
+<title>AI 问数目标链路</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --paper:#F4F6F8;
+    --surface:#FFFFFF;
+    --surface-2:#ECEFF3;
+    --ink:#14171C;
+    --ink-2:#39414B;
+    --muted:#6C7583;
+    --line:#D5DAE1;
+    --line-strong:#A9B3BF;
+    --accent:#0F6E63;
+    --accent-2:#DDEDE9;
+    --signal:#8A5300;
+    --rule:#E1E6EB;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --paper:#0F1216;
+      --surface:#171B21;
+      --surface-2:#1F252C;
+      --ink:#E7EAEE;
+      --ink-2:#C0C7D0;
+      --muted:#8B95A1;
+      --line:#2B323B;
+      --line-strong:#5A6572;
+      --accent:#5FD0BC;
+      --accent-2:#12302D;
+      --signal:#E0AC63;
+      --rule:#232A32;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --paper:#0F1216;
+    --surface:#171B21;
+    --surface-2:#1F252C;
+    --ink:#E7EAEE;
+    --ink-2:#C0C7D0;
+    --muted:#8B95A1;
+    --line:#2B323B;
+    --line-strong:#5A6572;
+    --accent:#5FD0BC;
+    --accent-2:#12302D;
+    --signal:#E0AC63;
+    --rule:#232A32;
+  }
+
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Noto Sans SC", system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size:16px;
+    line-height:1.78;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .page{
+    max-width:1100px;
+    margin-inline:auto;
+    padding-inline:clamp(16px,5vw,56px);
+    padding-block:clamp(36px,6vw,76px);
+    display:flex;
+    flex-direction:column;
+    gap:clamp(40px,6vw,72px);
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{ display:flex; flex-direction:column; gap:14px; }
+  .eyebrow{
+    margin:0;
+    font-family:"JetBrains Mono", ui-monospace, monospace;
+    font-size:11.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+  }
+  h1{
+    margin:0;
+    font-family:"Noto Serif SC", Georgia, serif;
+    font-weight:700;
+    font-size:clamp(30px,5.4vw,46px);
+    line-height:1.22;
+    letter-spacing:-.01em;
+    text-wrap:balance;
+  }
+  .lede{
+    margin:0;
+    max-width:56ch;
+    font-size:17px;
+    color:var(--ink-2);
+  }
+  .stats{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    margin:6px 0 0;
+    padding:14px 0 0;
+    border-top:1px solid var(--rule);
+    list-style:none;
+  }
+  .stats li{
+    font-size:13.5px;
+    color:var(--muted);
+  }
+  .stats b{
+    font-family:"JetBrains Mono", ui-monospace, monospace;
+    font-weight:500;
+    font-size:17px;
+    color:var(--ink);
+    margin-right:5px;
+  }
+
+  /* ---------- diagram ---------- */
+  .diagram{ margin:0; display:flex; flex-direction:column; gap:16px; }
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 22px;
+    font-size:12.5px;
+    color:var(--muted);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:7px; }
+  .swatch{ width:11px; height:11px; border-radius:3px; flex:none; }
+  .sw-flow{ background:var(--line-strong); }
+  .sw-hand{ background:var(--signal); border-radius:50%; }
+  .sw-zone{ background:var(--accent-2); border:1px dashed var(--accent); }
+  .canvas{
+    overflow-x:auto;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:clamp(12px,2.6vw,26px);
+  }
+  .canvas svg{ width:100%; min-width:660px; height:auto; display:block; }
+
+  .box{ fill:var(--surface); stroke:var(--line); stroke-width:1.2; }
+  .nt{ font-size:14px; font-weight:600; fill:var(--ink); }
+  .ns{ font-size:11.5px; fill:var(--muted); }
+  .step{ font-family:"JetBrains Mono", ui-monospace, monospace; font-size:11px; fill:var(--muted); }
+  .handoff{ font-size:12px; fill:var(--signal); }
+  .arw{ stroke:var(--line-strong); stroke-width:1.4; fill:none; }
+  .arw-dash{ stroke-dasharray:4 3; }
+  .zone{ fill:var(--accent-2); fill-opacity:.62; stroke:var(--accent); stroke-width:1; stroke-dasharray:5 4; }
+  .zone-label{ font-size:12px; font-weight:600; fill:var(--accent); }
+  .fork-note{ font-size:11.5px; fill:var(--accent); }
+  .chip{ fill:var(--surface-2); stroke:var(--line); stroke-width:1; }
+  .chip-t{ font-size:11.5px; font-weight:600; fill:var(--ink-2); }
+  .chip-s{ font-family:"JetBrains Mono", ui-monospace, monospace; font-size:10px; fill:var(--muted); }
+  figcaption{
+    font-size:13px;
+    color:var(--muted);
+    max-width:62ch;
+  }
+
+  /* ---------- narration ---------- */
+  .script{ display:flex; flex-direction:column; gap:clamp(26px,4vw,40px); }
+  .section-head{ display:flex; flex-direction:column; gap:8px; }
+  h2{
+    margin:0;
+    font-family:"Noto Serif SC", Georgia, serif;
+    font-weight:600;
+    font-size:clamp(21px,3vw,27px);
+    line-height:1.35;
+    letter-spacing:-.01em;
+  }
+  .section-head p{ margin:0; max-width:56ch; font-size:14.5px; color:var(--muted); }
+
+  .beat{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:8px;
+    padding-left:clamp(14px,2.4vw,22px);
+    border-left:2px solid var(--rule);
+  }
+  .beat .eyebrow{ color:var(--muted); font-size:11px; }
+  .beat h3{
+    margin:0;
+    font-size:17px;
+    font-weight:700;
+    letter-spacing:-.005em;
+  }
+  .beat p{ margin:0; max-width:64ch; color:var(--ink-2); }
+  .beat em{
+    font-style:normal;
+    font-weight:700;
+    color:var(--accent);
+  }
+  .beat .term{
+    font-family:"JetBrains Mono", ui-monospace, monospace;
+    font-size:.9em;
+    color:var(--ink);
+  }
+
+  .closeout{
+    margin:0;
+    padding:clamp(20px,3.4vw,30px);
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    font-family:"Noto Serif SC", Georgia, serif;
+    font-size:clamp(17px,2.4vw,21px);
+    line-height:1.6;
+    max-width:44ch;
+  }
+  .closeout b{ color:var(--accent); font-weight:700; }
+
+  .footnote{
+    font-size:13px;
+    color:var(--muted);
+    max-width:62ch;
+    padding-top:16px;
+    border-top:1px solid var(--rule);
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">第二次项目复盘 · 第一遍 · 只看链路</p>
+    <h1>从一句话到一个可追溯的答案</h1>
+    <p class="lede">运营人员在网页上问一句中文，系统走完 11 个环节，把结果、口径和审计记录一起交回来。左边是环节的顺序，右边是每个环节交给下一个环节的东西——这两列合起来，就是这条链路的全部内容。</p>
+    <ul class="stats">
+      <li><b>11</b>个环节</li>
+      <li><b>3</b>道受控关卡</li>
+      <li><b>2</b>种执行引擎，一套接口</li>
+    </ul>
+  </header>
+
+  <figure class="diagram">
+    <div class="legend">
+      <span><i class="swatch sw-flow"></i>主链路：按顺序执行</span>
+      <span><i class="swatch sw-hand"></i>产物：交给下一环节的东西</span>
+      <span><i class="swatch sw-zone"></i>受控区：模型不参与</span>
+    </div>
+
+    <div class="canvas">
+      <svg viewBox="0 0 920 1120" role="img" aria-label="目标链路架构图：从运营人员在 Web 提问，经 Nginx、FastAPI 认证、语义检索、DeepSeek 意图解析，进入受控区由查询规划器校验、SQL 编译器生成受控 SQL、再经店铺权限注入与 AST 安全校验，最后交给查询执行器（开发用 DuckDB，生产用 MaxCompute），结果组装后返回，并由审计日志与监控指标旁路记录。每一步的产物标注在右侧。">
+        <defs>
+          <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,1 L9,5 L0,9 z" fill="var(--line-strong)"/>
+          </marker>
+        </defs>
+
+        <!-- 受控区（画在最底层） -->
+        <rect class="zone" x="20" y="500" width="888" height="268" rx="12"/>
+        <text class="zone-label" x="890" y="519" text-anchor="end">受控区 · 模型不产出 SQL</text>
+
+        <!-- 环节 01 -->
+        <text class="step" x="16" y="68">01</text>
+        <rect class="box" x="36" y="40" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="64">运营人员 Web</text>
+        <text class="ns" x="52" y="84">输入一句中文自然语言问题</text>
+
+        <line class="arw" x1="184" y1="96" x2="184" y2="134" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="119.5">自然语言问题</text>
+
+        <!-- 环节 02 -->
+        <text class="step" x="16" y="162">02</text>
+        <rect class="box" x="36" y="134" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="158">Nginx 统一入口</text>
+        <text class="ns" x="52" y="178">TLS 终止 · 反向代理 · 静态资源</text>
+
+        <line class="arw" x1="184" y1="190" x2="184" y2="228" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="213.5">转发请求</text>
+
+        <!-- 环节 03 -->
+        <text class="step" x="16" y="256">03</text>
+        <rect class="box" x="36" y="228" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="252">FastAPI：认证与请求校验</text>
+        <text class="ns" x="52" y="272">API Token → 身份 + 授权店铺范围</text>
+
+        <line class="arw" x1="184" y1="284" x2="184" y2="322" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="307.5">已认证身份 + 授权店铺范围</text>
+
+        <!-- 环节 04 -->
+        <text class="step" x="16" y="350">04</text>
+        <rect class="box" x="36" y="322" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="346">语义检索（RAG）</text>
+        <text class="ns" x="52" y="366">指标 · 维度 · 数据集 · 术语 · 示例</text>
+
+        <line class="arw" x1="184" y1="378" x2="184" y2="416" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="401.5">相关知识 —— 不是查询结果</text>
+
+        <!-- 环节 05 -->
+        <text class="step" x="16" y="444">05</text>
+        <rect class="box" x="36" y="416" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="440">DeepSeek：自然语言 → 意图</text>
+        <text class="ns" x="52" y="460">指标 · 维度 · 时间 · 筛选 · 排序 · TopN</text>
+
+        <line class="arw" x1="184" y1="472" x2="184" y2="510" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="495.5">结构化意图 —— 不是 SQL</text>
+
+        <!-- 环节 06 -->
+        <text class="step" x="16" y="538">06</text>
+        <rect class="box" x="36" y="510" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="534">通用查询规划器</text>
+        <text class="ns" x="52" y="554">语义校验 + 数据集选择，不成立就拒绝</text>
+
+        <line class="arw" x1="184" y1="566" x2="184" y2="604" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="589.5">查询计划（数据集 + 查询方式）</text>
+
+        <!-- 环节 07 -->
+        <text class="step" x="16" y="632">07</text>
+        <rect class="box" x="36" y="604" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="628">受控 SQL 编译器</text>
+        <text class="ns" x="52" y="648">通用组合 + 专用复杂模板</text>
+
+        <line class="arw" x1="184" y1="660" x2="184" y2="698" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="683.5">受控 SQL —— 只来自预先写好的模板</text>
+
+        <!-- 环节 08 -->
+        <text class="step" x="16" y="726">08</text>
+        <rect class="box" x="36" y="698" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="722">店铺权限注入 + AST 安全校验</text>
+        <text class="ns" x="52" y="742">只读 · 白名单表字段 · 禁读文件</text>
+
+        <line class="arw" x1="184" y1="754" x2="184" y2="792" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="777.5">只读 SQL —— 已注入店铺范围</text>
+
+        <!-- 环节 09 -->
+        <text class="step" x="16" y="816">09</text>
+        <rect class="box" x="36" y="792" width="296" height="88" rx="7"/>
+        <text class="nt" x="52" y="816">查询执行器</text>
+        <rect class="chip" x="48" y="826" width="130" height="42" rx="5"/>
+        <text class="chip-t" x="60" y="844">开发</text>
+        <text class="chip-s" x="60" y="859">DuckDB + Parquet</text>
+        <rect class="chip" x="190" y="826" width="130" height="42" rx="5"/>
+        <text class="chip-t" x="202" y="844">生产目标</text>
+        <text class="chip-s" x="202" y="859">MaxCompute</text>
+        <text class="fork-note" x="364" y="846">同一套接口，二选一</text>
+
+        <line class="arw" x1="184" y1="880" x2="184" y2="922" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="905.5">数据行</text>
+
+        <!-- 环节 10 -->
+        <text class="step" x="16" y="946">10</text>
+        <rect class="box" x="36" y="922" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="946">结果组装</text>
+        <text class="ns" x="52" y="966">摘要 · 图表 · 口径 · 数据时间 · SQL</text>
+
+        <line class="arw arw-dash" x1="184" y1="978" x2="184" y2="1016" marker-end="url(#arw)"/>
+        <text class="handoff" x="364" y="1001.5">答案（摘要 / 图表 / 口径 / SQL）</text>
+
+        <!-- 环节 11 -->
+        <text class="step" x="16" y="1040">11</text>
+        <rect class="box" x="36" y="1016" width="296" height="56" rx="7"/>
+        <text class="nt" x="52" y="1040">审计日志 · 监控指标</text>
+        <text class="ns" x="52" y="1060">身份 · SQL · 行数 · 耗时</text>
+        <text class="fork-note" x="364" y="1044">旁路：不阻塞、不改变回答</text>
+      </svg>
+    </div>
+
+    <figcaption>左列是链路的执行顺序，右列的琥珀色文字是每个环节交出去的东西。注意第 04 步交出的是知识而不是数据，第 05 步交出的是意图而不是 SQL，真正的数值只在第 09 步之后才出现。</figcaption>
+  </figure>
+
+  <section class="script">
+    <div class="section-head">
+      <p class="eyebrow">口述稿 · 约 3 分钟</p>
+      <h2>照着这条链路讲一遍</h2>
+      <p>分四段。每段对应图上的几个环节，先讲"这一段在干什么"，再讲"它交出什么"。</p>
+    </div>
+
+    <article class="beat">
+      <p class="eyebrow">环节 01 – 03</p>
+      <h3>先确认"你是谁、你能看什么"</h3>
+      <p>链路从运营人员的浏览器开始。请求先经过 Nginx 统一入口，进到 FastAPI。这一关做两件事：验证身份、校验请求。验证通过之后，系统拿到的不只是"这是一个合法用户"，还有<em>他能看哪些店铺</em>。这份授权店铺范围会一路带在请求上，直到最后一步才注入 SQL——链条前面的环节都碰不到它，也就没有绕过去的可能。</p>
+    </article>
+
+    <article class="beat">
+      <p class="eyebrow">环节 04 – 05</p>
+      <h3>把中文问题变成一份结构化的意图</h3>
+      <p>接下来要搞清楚"这句话到底在问什么"。第一步是语义检索：从指标、维度、数据集、术语和示例里，找出跟这个问题相关的数仓知识，召回一批上下文。要强调它的产出是<em>知识</em>，不是查询结果。第二步把原始问题和这批知识一起交给 DeepSeek，让它输出一份结构化意图——指标是什么、按哪个维度看、时间范围、筛选条件、排序方式、取前几名。它的产出是<em>意图</em>，不是 SQL。到这里为止，模型的任务就结束了。</p>
+    </article>
+
+    <article class="beat">
+      <p class="eyebrow">环节 06 – 08</p>
+      <h3>进入受控区：三道关卡决定"这条查询能不能跑"</h3>
+      <p>从这一步开始模型不再参与，全部由程序把关。第一关是查询规划器：做语义校验和数据集选择——这个指标和这个维度能不能组合？该查哪张已经治理过的表？组合不成立就直接拒绝，不猜、不降级。第二关是受控 SQL 编译器：通用组合走通用编译器，北极星、SKU 生命周期这类复杂口径走专用模板，总之 SQL 只可能来自预先写好的模板，模型没有机会拼字符串。第三关是权限和安全的收口：把授权店铺范围注入 SQL，再用 AST 校验这条语句——是不是只读、是不是只碰白名单的表和字段、有没有读文件。</p>
+    </article>
+
+    <article class="beat">
+      <p class="eyebrow">环节 09 – 11</p>
+      <h3>执行、组装、留痕</h3>
+      <p>过了这三关，SQL 才交给查询执行器。执行器是<em>一套接口、两种实现</em>：开发环境用本地的 DuckDB 加 Parquet，生产目标是 MaxCompute，换引擎不用动上面的任何逻辑。查回来的数据行交给结果组装，变成运营能看懂的东西：摘要、图表、指标口径、数据时间，需要时附上 SQL 原文。最后，这次请求的身份、SQL、行数和耗时都会写进审计日志和监控指标——这是一条旁路，它不影响回答本身，但让每一次问数都可追溯。</p>
+    </article>
+
+    <p class="closeout">整条链路可以压成一句话：<b>模型只负责把话听懂，程序负责决定能查什么、怎么查、查完给谁看。</b></p>
+  </section>
+
+  <p class="footnote">自测方法：遮住图右边那一列，只看着左边的 11 个环节往下讲，逐个说出它交给下一个环节什么。讲得出来的地方就是真懂了；卡住的地方，就是下一遍要回去看代码的地方。</p>
+
+</div>

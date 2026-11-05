@@ -1,0 +1,49 @@
+version: 1
+datasets:
+  - name: dws_brand_day_us
+    file: data/parquet/dws_brand_day_us.parquet
+    grain: 一行代表一个品牌在一个销售日的汇总
+    time_field: stat_dt
+    dimensions: [brand, stat_dt]
+    metrics: [customer_cnt, order_cnt, refund_order_cnt, return_order_cnt, high_value_order_cnt, ordered_product_sales, refund_amount, units_ordered, avg_order_amount, avg_item_price, avg_orders_per_customer, refund_rate]
+    notes: US 店铺；销售指标统一排除订单状态 4、5；订单数按 shop_id + amazon_order_id 去重后汇总。
+
+  - name: dws_sku_tag_day_us
+    file: data/parquet/dws_sku_tag_day_us.parquet
+    grain: 一行代表一个销售日、店铺、ASIN 和 seller_sku 的汇总
+    time_field: stat_dt
+    dimensions: [stat_dt, brand, shop_id, shop_code, asin, seller_sku, item_name, listing_report_status]
+    metrics: [order_cnt, ordered_product_sales, refund_amount, units_ordered, customer_cnt, gross_margin_pct, income, gross_profit, refund_amount_profit, is_margin_20, is_star_4, is_all_high_value]
+    notes: US 店铺；仅保留有销售的 SKU 日记录；销售指标统一排除订单状态 4、5。
+
+  - name: ads_aws_sku_period_sales
+    file: data/parquet/ads_aws_sku_period_sales.parquet
+    grain: 一行代表一个 US SKU（seller_sku + asin，跨店合并）
+    time_field: listing_date
+    dimensions: [seller_sku, asin, brand, shop_code, listing_date, listing_report_status, style_tag, content_tag, craft_tag, space_tag, operator, designer, planner, first_category_name]
+    metrics: [ordered_product_sales_30d, ordered_product_sales_60d, ordered_product_sales_90d, ordered_product_sales_120d, units_ordered_30d, units_ordered_60d, units_ordered_90d, units_ordered_120d, refund_amount_30d, refund_amount_60d, refund_amount_90d, refund_amount_120d, ad_spend_30d, ad_spend_60d, ad_spend_90d, ad_spend_120d, gross_margin_pct]
+    notes: 上架周期窗口指标；不要再对同一 SKU 的窗口指标按日累加。
+
+  - name: ads_aws_sku_recap_month_detail
+    file: data/parquet/ads_aws_sku_recap_month_detail.parquet
+    grain: 一行代表一个自然月和一个 US SKU（seller_sku + asin，跨店合并）
+    time_field: stat_month
+    dimensions: [stat_month, brand, shop_name, seller_sku, asin, listing_report_status, success_tier_30d]
+    metrics: [target_qty_30d, units_ordered_30d, ordered_product_sales_30d, recap_month_ordered_product_sales, recap_month_qty]
+    notes: 月度复盘数据；success_tier_30d 使用 30 天销量和 20 单目标划分。
+
+  - name: dwi_aws_sku_listing_date
+    file: data/parquet/dwi_aws_sku_listing_date.parquet
+    grain: 一行代表一个 US SKU（seller_sku + asin，跨店合并）
+    time_field: listing_date
+    dimensions: [asin, seller_sku, brand, shop_code, listing_date, has_fn_sku, listing_report_status, style_tag, content_tag, craft_tag, space_tag, operator, designer, planner, first_category_name]
+    metrics: [price, has_amazon_image, avg_star]
+    notes: SKU 商品主数据；适合查询上架日期、人员、标签和商品状态。
+
+  - name: dim_north_star_target
+    file: data/parquet/dim_north_star_target.parquet
+    grain: 一行代表一个自然月的北极星每日目标
+    time_field: stat_month
+    dimensions: [stat_month]
+    metrics: [daily_target]
+    notes: 与 dws_brand_day_us 按 stat_month 关联；同一月份只能有一条记录。

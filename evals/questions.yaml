@@ -1,0 +1,527 @@
+version: 1
+description: Amazon US 智能问数代表性问题集；来源于现有 Quick BI 看板、ADS/DWS 主题和业务排查场景。
+
+questions:
+  # 品牌经营总览
+  - id: brand_001
+    category: 品牌经营
+    question: 最近30天销售额最高的5个品牌是什么？
+    paraphrases: [近一个月哪些品牌卖得最好, 过去30天品牌销售金额前五名]
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [brand]
+    status: implemented
+
+  - id: brand_002
+    category: 品牌经营
+    question: 最近30天各品牌的销售额、订单数和销量分别是多少？
+    paraphrases: [近一个月各品牌卖了多少钱多少单, 看一下品牌近30天经营概况]
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount, order_count, units_sold]
+    expected_dimensions: [brand]
+    status: implemented
+
+  - id: brand_003
+    category: 品牌经营
+    question: 最近30天销售额按天的趋势是什么？
+    paraphrases: [近一个月每天销售额走势, 最近30天销售金额有没有下降]
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [stat_dt]
+    status: implemented
+
+  - id: brand_004
+    category: 品牌经营
+    question: 最近30天哪个品牌的退款金额最高？
+    paraphrases: [近一个月退款最多的是哪个品牌, 品牌退款金额排名]
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [refund_amount]
+    expected_dimensions: [brand]
+    status: ready
+
+  - id: brand_005
+    category: 品牌经营
+    question: 最近30天各品牌的退款率是多少？
+    paraphrases: [近一个月品牌退款比例, 哪个品牌退款率高]
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [refund_rate]
+    expected_dimensions: [brand]
+    notes: 必须使用汇总退款金额除以汇总销售额，不能直接平均日退款率。
+    status: implemented
+
+  - id: brand_006
+    category: 品牌经营
+    question: 最近7天销售额相比前7天增长还是下降？
+    paraphrases: [这周比上周卖得怎么样, 最近一周销售额环比]
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: []
+    status: ready
+
+  # 北极星与高价值订单
+  - id: north_star_001
+    category: 北极星
+    question: 最近30天每天的高价值订单数和目标达成率是多少？
+    paraphrases: [近一个月北极星完成情况, 每天高价值订单有没有达标]
+    expected_datasets: [dws_brand_day_us, dim_north_star_target]
+    expected_metrics: [high_value_order_cnt, north_star_achievement_rate]
+    expected_dimensions: [stat_dt]
+    status: implemented
+
+  - id: north_star_002
+    category: 北极星
+    question: 最近30天有多少天没有完成高价值订单目标？
+    paraphrases: [近一个月北极星未达标天数, 高价值订单目标有几天没完成]
+    expected_datasets: [dws_brand_day_us, dim_north_star_target]
+    expected_metrics: [high_value_order_cnt, north_star_achievement_rate]
+    expected_dimensions: [stat_dt]
+    status: ready
+
+  - id: north_star_003
+    category: 北极星
+    question: 最近30天哪个品牌贡献的高价值订单最多？
+    paraphrases: [高价值订单主要来自哪个品牌, 品牌北极星订单排名]
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [high_value_order_cnt]
+    expected_dimensions: [brand]
+    status: ready
+
+  # SKU 销售分析
+  - id: sku_001
+    category: SKU经营
+    question: 最近30天销售额最高的10个SKU是什么？
+    paraphrases: [近一个月SKU销售排名前十, 最近30天哪些商品卖得最好]
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [seller_sku, asin]
+    status: ready
+
+  - id: sku_002
+    category: SKU经营
+    question: 最近30天销量最高但退款金额也较高的SKU有哪些？
+    paraphrases: [哪些畅销SKU退款也多, 高销量高退款商品]
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [units_sold, refund_amount]
+    expected_dimensions: [seller_sku, asin]
+    notes: “较高”没有明确阈值时应追问，或明确采用排名规则。
+    status: clarification_required
+
+  - id: sku_003
+    category: SKU经营
+    question: 查询指定SKU最近30天每天的销售额、销量和订单数。
+    paraphrases: [这个SKU近一个月每天卖多少, 看某SKU日销售趋势]
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [sales_amount, units_sold, order_count]
+    expected_dimensions: [stat_dt, seller_sku, asin]
+    notes: 用户必须提供 seller_sku 或 asin，否则需要追问。
+    status: clarification_required
+
+  - id: sku_004
+    category: SKU经营
+    question: 最近一个完整自然月各店铺销售额最高的5个SKU是什么？
+    paraphrases: [上个月每个店铺的SKU销售前五, 店铺月度爆款排行]
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [shop_code, seller_sku, asin]
+    status: ready
+
+  - id: sku_005
+    category: SKU经营
+    question: 最近30天毛利率低于20%的SKU有哪些？
+    paraphrases: [近一个月低毛利SKU, 哪些商品毛利不到20%]
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [gross_margin_pct]
+    expected_dimensions: [seller_sku, asin, brand]
+    notes: 毛利率字段是月报快照属性，不应按日求和。
+    status: ready
+
+  # 新品冷启动和周期表现
+  - id: lifecycle_001
+    category: 新品冷启动
+    question: 上架满30天但30天销量没有达到20单的SKU有哪些？
+    paraphrases: [30天未达标新品, 哪些SKU过了30天还没卖到20件]
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_units_30d]
+    expected_dimensions: [seller_sku, asin, brand, listing_date]
+    status: implemented
+
+  - id: lifecycle_002
+    category: 新品冷启动
+    question: 30天销量已经达到20单的SKU有哪些？
+    paraphrases: [30天达标SKU名单, 新品成功商品有哪些]
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_units_30d]
+    expected_dimensions: [seller_sku, asin, brand]
+    status: ready
+
+  - id: lifecycle_003
+    category: 新品冷启动
+    question: 各品牌上架满30天SKU的成功率是多少？
+    paraphrases: [品牌新品30天达标率, 各品牌产品成功率]
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_units_30d]
+    expected_dimensions: [brand]
+    notes: 分母只包含上架满30天的SKU，分子为其中30天销量达到20的SKU。
+    status: ready
+
+  - id: lifecycle_004
+    category: 新品冷启动
+    question: 30天销售额最高的10个新品是什么？
+    paraphrases: [新品30天销售排行, 冷启动销售额前十SKU]
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_sales_30d]
+    expected_dimensions: [seller_sku, asin, brand]
+    status: ready
+
+  - id: lifecycle_005
+    category: 新品冷启动
+    question: 30天ACOS高于30%的SKU有哪些？
+    paraphrases: [新品广告投入占销售额超过30%, 哪些SKU 30天广告效率差]
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [ad_spend_30d, sku_sales_30d]
+    expected_dimensions: [seller_sku, asin, brand]
+    notes: ACOS = ad_spend_30d / ordered_product_sales_30d，销售额为0时返回NULL。
+    status: ready
+
+  - id: lifecycle_006
+    category: 新品冷启动
+    question: 30天退款率高于10%的SKU有哪些？
+    paraphrases: [新品30天高退款商品, 哪些SKU上架30天内退款比例超过10%]
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [refund_amount_30d, sku_sales_30d]
+    expected_dimensions: [seller_sku, asin, brand]
+    notes: 退款率 = refund_amount_30d / ordered_product_sales_30d。
+    status: ready
+
+  - id: lifecycle_007
+    category: 新品冷启动
+    question: 各上架月份的SKU数量和30天成功率趋势如何？
+    paraphrases: [按上架批次看产品成功率, 每月上新数量和达标率]
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_units_30d]
+    expected_dimensions: [listing_month]
+    notes: listing_month由listing_date派生；分母仅含已满30天SKU。
+    status: ready
+
+  # 月度经营复盘
+  - id: recap_001
+    category: 月度复盘
+    question: 最近一个完整自然月销售额最高的10个SKU是什么？
+    paraphrases: [上个月SKU销售前十, 最近完整月份哪些商品卖得最好]
+    expected_datasets: [ads_aws_sku_recap_month_detail]
+    expected_metrics: [monthly_sales]
+    expected_dimensions: [seller_sku, asin, brand]
+    status: ready
+
+  - id: recap_002
+    category: 月度复盘
+    question: 指定月份达标、未达标和待评估SKU分别有多少个？
+    paraphrases: [某月SKU成功档位分布, 月度达标商品数量]
+    expected_datasets: [ads_aws_sku_recap_month_detail]
+    expected_metrics: [sku_count]
+    expected_dimensions: [stat_month, success_tier_30d]
+    notes: 用户没有提供月份时需要追问或使用最近完整月份并明确说明。
+    status: clarification_required
+
+  - id: recap_003
+    category: 月度复盘
+    question: 指定月份各品牌的销售额和销量是多少？
+    paraphrases: [某个月品牌经营复盘, 按品牌看月销售金额和件数]
+    expected_datasets: [ads_aws_sku_recap_month_detail]
+    expected_metrics: [monthly_sales, recap_month_qty]
+    expected_dimensions: [stat_month, brand]
+    status: clarification_required
+
+  - id: recap_004
+    category: 月度复盘
+    question: 哪些SKU连续两个月销售额下降？
+    paraphrases: [连续两月下滑商品, SKU月销售额持续下降名单]
+    expected_datasets: [ads_aws_sku_recap_month_detail]
+    expected_metrics: [monthly_sales]
+    expected_dimensions: [stat_month, seller_sku, asin]
+    status: ready
+
+  # 商品主数据与数据质量
+  - id: product_001
+    category: 商品主数据
+    question: 哪些FBA SKU没有亚马逊主图？
+    paraphrases: [没有Amazon图片的FBA商品, 哪些SKU缺主图]
+    expected_datasets: [dwi_aws_sku_listing_date]
+    expected_metrics: [has_amazon_image]
+    expected_dimensions: [seller_sku, asin, brand, listing_report_status]
+    status: ready
+
+  - id: product_002
+    category: 商品主数据
+    question: 哪些SKU缺少上架日期？
+    paraphrases: [上架日为空的商品, listing date缺失SKU]
+    expected_datasets: [dwi_aws_sku_listing_date]
+    expected_metrics: []
+    expected_dimensions: [seller_sku, asin, brand, listing_date]
+    status: ready
+
+  - id: product_003
+    category: 商品主数据
+    question: 各运营负责的FBA SKU数量是多少？
+    paraphrases: [按运营统计商品数量, 每个operator负责多少SKU]
+    expected_datasets: [dwi_aws_sku_listing_date]
+    expected_metrics: [sku_count]
+    expected_dimensions: [operator]
+    status: ready
+
+  - id: product_004
+    category: 商品主数据
+    question: 哪些SKU的评分低于4分？
+    paraphrases: [低评分商品名单, avg star不到4的SKU]
+    expected_datasets: [dwi_aws_sku_listing_date]
+    expected_metrics: [avg_star]
+    expected_dimensions: [seller_sku, asin, brand]
+    status: ready
+
+  # 当前本地数据不支持，保留为扩展需求
+  - id: future_001
+    category: 地区分析
+    question: 最近30天各州的销售额和客户数是多少？
+    expected_datasets: []
+    missing_data: [buyer_region维度]
+    status: unsupported
+
+  - id: future_002
+    category: 价格带分析
+    question: 最近30天哪个价格区间的销售额最高？
+    expected_datasets: []
+    missing_data: [price_range维度的销售事实]
+    status: unsupported
+
+  - id: future_003
+    category: 利润诊断
+    question: 某个负毛利SKU亏损的主要成本项是什么？
+    expected_datasets: []
+    missing_data: [领星利润月报成本明细]
+    status: unsupported
+
+  - id: future_004
+    category: 生命周期
+    question: 本月新品、30到120天和一年以上商品的销售额占比分别是多少？
+    expected_datasets: [dws_sku_tag_day_us, dwi_aws_sku_listing_date]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [lifecycle_bucket]
+    notes: 当前可由两表计算，但生产方案优先使用ads_aws_lifecycle_gmv_monthly；本地尚未归档该ADS表。
+    status: deferred
+
+  # 扩展评测：真实业务同义问法与边界条件
+  - id: ext_brand_001
+    category: 品牌经营
+    question: 最近30天销售额最高的品牌是哪一个？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [brand]
+    status: evaluation
+  - id: ext_brand_002
+    category: 品牌经营
+    question: Cuspin最近30天的销售额是多少？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [brand]
+    status: evaluation
+  - id: ext_brand_003
+    category: 品牌经营
+    question: 最近30天各品牌卖了多少单？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [order_count]
+    expected_dimensions: [brand]
+    status: evaluation
+  - id: ext_brand_004
+    category: 品牌经营
+    question: 最近30天退款率最高的品牌是哪一个？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [refund_rate]
+    expected_dimensions: [brand]
+    status: evaluation
+  - id: ext_brand_005
+    category: 品牌经营
+    question: 最近30天各品牌退款金额排名。
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [refund_amount]
+    expected_dimensions: [brand]
+    status: evaluation
+  - id: ext_brand_006
+    category: 品牌经营
+    question: 最近30天整体销售额是多少？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: []
+    status: evaluation
+  - id: ext_brand_007
+    category: 品牌经营
+    question: 最近30天整体退款率是多少？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [refund_rate]
+    expected_dimensions: []
+    status: evaluation
+  - id: ext_brand_008
+    category: 品牌经营
+    question: 最近30天哪天的销售额最高？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [stat_dt]
+    status: evaluation
+  - id: ext_brand_009
+    category: 品牌经营
+    question: 最近30天哪天的销售额最低？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [stat_dt]
+    status: evaluation
+  - id: ext_brand_010
+    category: 品牌经营
+    question: 最近30天销售额是涨了还是跌了？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [stat_dt]
+    status: evaluation
+
+  - id: ext_sku_001
+    category: SKU经营
+    question: 最近30天销量前五的SKU有哪些？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [units_sold]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_sku_002
+    category: SKU经营
+    question: 最近30天销售额超过1万的商品有哪些？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_sku_003
+    category: SKU经营
+    question: 2026年8月销量最高的10个SKU是什么？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [units_sold]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_sku_004
+    category: SKU经营
+    question: 最近30天Cuspin品牌销售额最高的SKU是哪一个？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [seller_sku, asin, brand]
+    status: evaluation
+  - id: ext_sku_005
+    category: SKU经营
+    question: 每个品牌最近30天销售额最高的商品是什么？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [brand, seller_sku, asin]
+    status: evaluation
+  - id: ext_sku_006
+    category: SKU经营
+    question: 最近30天销量最少的10个SKU有哪些？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [units_sold]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_sku_007
+    category: SKU经营
+    question: 最近30天每个SKU的订单数是多少？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [order_count]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_sku_008
+    category: SKU经营
+    question: 按销售日期统计，2026年8月销售额最高的SKU有哪些？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_sku_009
+    category: SKU经营
+    question: 最近30天销量最高的SKU是哪一个？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [units_sold]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_sku_010
+    category: SKU经营
+    question: 最近30天销售额最低的SKU是哪一个？
+    expected_datasets: [dws_sku_tag_day_us]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+
+  - id: ext_star_001
+    category: 北极星
+    question: 最近30天高价值订单目标完成了多少天？
+    expected_datasets: [dws_brand_day_us, dim_north_star_target]
+    expected_metrics: [high_value_order_cnt, north_star_achievement_rate]
+    expected_dimensions: [stat_dt]
+    status: evaluation
+  - id: ext_star_002
+    category: 北极星
+    question: 最近30天有几天北极星没有达标？
+    expected_datasets: [dws_brand_day_us, dim_north_star_target]
+    expected_metrics: [high_value_order_cnt, north_star_achievement_rate]
+    expected_dimensions: [stat_dt]
+    status: evaluation
+  - id: ext_star_003
+    category: 北极星
+    question: 最近30天高价值订单达成率最高是哪天？
+    expected_datasets: [dws_brand_day_us, dim_north_star_target]
+    expected_metrics: [high_value_order_cnt, north_star_achievement_rate]
+    expected_dimensions: [stat_dt]
+    status: evaluation
+  - id: ext_star_004
+    category: 北极星
+    question: 最近30天哪个品牌高价值订单最多？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [high_value_order_cnt]
+    expected_dimensions: [brand]
+    status: evaluation
+  - id: ext_star_005
+    category: 北极星
+    question: 最近30天每天的北极星订单数是多少？
+    expected_datasets: [dws_brand_day_us]
+    expected_metrics: [high_value_order_cnt]
+    expected_dimensions: [stat_dt]
+    status: evaluation
+
+  - id: ext_lifecycle_001
+    category: 新品冷启动
+    question: 上架30天后仍未达到20单的SKU有哪些？
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_units_30d]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_lifecycle_002
+    category: 新品冷启动
+    question: 哪些新品上架30天销量达标？
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_units_30d]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation
+  - id: ext_lifecycle_003
+    category: 新品冷启动
+    question: 2026年8月上架的SKU销售额如何？
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_sales_30d]
+    expected_dimensions: [seller_sku, asin]
+    notes: “上架的 SKU 销售额”按 SKU 上架后 30 天窗口销售额理解；若要按销售日期统计，应明确写出“按销售日期”。
+    status: evaluation
+  - id: ext_lifecycle_004
+    category: 新品冷启动
+    question: 各品牌30天销量达标率是多少？
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [sku_units_30d]
+    expected_dimensions: [brand]
+    notes: 派生指标，待开发品牌成功率模板后再纳入评测。
+    status: deferred
+  - id: ext_lifecycle_005
+    category: 新品冷启动
+    question: 30天广告费最高的SKU有哪些？
+    expected_datasets: [ads_aws_sku_period_sales]
+    expected_metrics: [ad_spend_30d]
+    expected_dimensions: [seller_sku, asin]
+    status: evaluation

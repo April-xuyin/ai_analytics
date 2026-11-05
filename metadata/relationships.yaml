@@ -1,0 +1,22 @@
+version: 1
+relationships:
+  - name: brand_daily_to_north_star_target
+    from_dataset: dws_brand_day_us
+    to_dataset: dim_north_star_target
+    join: 按 stat_dt 所在自然月关联 stat_month
+    keywords: [北极星, 高价值订单, 目标达成率, daily_target]
+    description: 计算每日北极星达成率和未达标天数时使用；目标表同一月份只能有一条记录。
+
+  - name: sku_daily_to_listing_master
+    from_dataset: dws_sku_tag_day_us
+    to_dataset: dwi_aws_sku_listing_date
+    join: 按 seller_sku 和 asin 关联
+    keywords: [上架日期, 商品主数据, SKU, ASIN]
+    description: 日销售事实与SKU上架日期、人员和商品标签关联。
+
+  - name: sku_lifecycle_window
+    from_dataset: dwi_aws_sku_listing_date
+    to_dataset: ads_aws_sku_period_sales
+    join: 按 seller_sku 和 asin 关联
+    keywords: [新品, 上架30天, 上架满30天, 30天销量, 达标SKU]
+    description: 判断SKU上架窗口销量是否达标；周期指标已经预计算，不能再次按日累加。

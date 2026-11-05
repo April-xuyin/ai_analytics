@@ -1,0 +1,22 @@
+version: 1
+datasets:
+  - name: dws_brand_day_us
+    priority: 10
+    time_field: stat_dt
+    dimensions: [brand, stat_dt]
+    metrics:
+      sales_amount: "ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount"
+      order_count: "SUM(order_cnt) AS order_count"
+      units_sold: "SUM(units_ordered) AS units_sold"
+      refund_amount: "ROUND(SUM(refund_amount), 2) AS refund_amount"
+      refund_rate: "ROUND(SUM(refund_amount) / NULLIF(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 0), 4) AS refund_rate"
+
+  - name: dws_sku_tag_day_us
+    priority: 20
+    time_field: stat_dt
+    dimensions: [shop_code, brand, seller_sku, asin, stat_dt]
+    metrics:
+      sales_amount: "ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount"
+      units_sold: "SUM(units_ordered) AS units_sold"
+      refund_amount: "ROUND(SUM(refund_amount), 2) AS refund_amount"
+      refund_rate: "ROUND(SUM(refund_amount) / NULLIF(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 0), 4) AS refund_rate"

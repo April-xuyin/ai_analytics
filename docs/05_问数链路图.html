@@ -1,0 +1,892 @@
+<title>问数链路追踪</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
+
+<style>
+  :root {
+    --ground:      #F4F6F8;
+    --surface:     #FFFFFF;
+    --surface-2:   #EDF0F4;
+    --ink:         #14181F;
+    --ink-2:       #3A424E;
+    --muted:       #6A7381;
+    --line:        #DCE1E8;
+    --line-strong: #C2C9D3;
+
+    --f-text:      #8F6218;
+    --f-obj:       #4A4E9E;
+    --f-sql:       #0F6E68;
+    --f-row:       #9C3C55;
+
+    --font-display: 'Noto Serif SC', 'Songti SC', 'SimSun', Georgia, serif;
+    --font-body:    'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0F1216;
+      --surface:     #161A20;
+      --surface-2:   #1D222A;
+      --ink:         #E9EDF2;
+      --ink-2:       #B4BDC8;
+      --muted:       #818B98;
+      --line:        #272D36;
+      --line-strong: #3A424E;
+
+      --f-text:      #D9A94F;
+      --f-obj:       #9DA2EA;
+      --f-sql:       #5FC0B3;
+      --f-row:       #E28FA4;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #0F1216;
+    --surface:     #161A20;
+    --surface-2:   #1D222A;
+    --ink:         #E9EDF2;
+    --ink-2:       #B4BDC8;
+    --muted:       #818B98;
+    --line:        #272D36;
+    --line-strong: #3A424E;
+
+    --f-text:      #D9A94F;
+    --f-obj:       #9DA2EA;
+    --f-sql:       #5FC0B3;
+    --f-row:       #E28FA4;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 44px 88px;
+  }
+
+  /* ---------- 页头 ---------- */
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(24px, 4.6vw, 36px);
+    line-height: 1.3;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: 0 0 14px;
+  }
+
+  .standfirst {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+
+  /* ---------- 起点 ---------- */
+
+  .origin {
+    margin-top: 30px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  .origin-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .origin pre {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--ink);
+    overflow-x: auto;
+  }
+
+  /* ---------- 图例 ---------- */
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin: 30px 0 26px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex: none;
+    background: var(--muted);
+  }
+
+  .swatch.text { background: var(--f-text); }
+  .swatch.obj  { background: var(--f-obj); }
+  .swatch.sql  { background: var(--f-sql); }
+  .swatch.row  { background: var(--f-row); }
+
+  /* ---------- 主链路 ---------- */
+
+  .flow {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+  }
+
+  .flow::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 16px;
+    bottom: 16px;
+    width: 2px;
+    background: var(--line);
+  }
+
+  .step {
+    position: relative;
+    padding-left: 52px;
+    padding-bottom: 12px;
+  }
+
+  .num {
+    position: absolute;
+    left: 0;
+    top: 15px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--ground);
+    border: 1.5px solid var(--line-strong);
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--muted);
+    z-index: 1;
+  }
+
+  .step[data-form="text"] .num { border-color: var(--f-text); color: var(--f-text); }
+  .step[data-form="obj"]  .num { border-color: var(--f-obj);  color: var(--f-obj); }
+  .step[data-form="sql"]  .num { border-color: var(--f-sql);  color: var(--f-sql); }
+  .step[data-form="row"]  .num { border-color: var(--f-row);  color: var(--f-row); }
+
+  .is-convert .num {
+    color: var(--surface);
+    border-color: transparent;
+  }
+
+  .is-convert[data-form="text"] .num { background: var(--f-text); }
+  .is-convert[data-form="obj"]  .num { background: var(--f-obj); }
+  .is-convert[data-form="sql"]  .num { background: var(--f-sql); }
+  .is-convert[data-form="row"]  .num { background: var(--f-row); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 17px 15px;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+
+  .loc {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: -.01em;
+  }
+
+  .what {
+    font-size: 13.5px;
+    line-height: 1.66;
+    color: var(--ink-2);
+    margin: 0 0 11px;
+    padding: 1px 0 1px 11px;
+    border-left: 2px solid var(--line-strong);
+  }
+
+  .what b { color: var(--ink); font-weight: 700; }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .04em;
+    padding: 2.5px 8px;
+    border-radius: 20px;
+    border: 1px solid var(--line-strong);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .tag.text { border-color: var(--f-text); color: var(--f-text); }
+  .tag.obj  { border-color: var(--f-obj);  color: var(--f-obj); }
+  .tag.sql  { border-color: var(--f-sql);  color: var(--f-sql); }
+  .tag.row  { border-color: var(--f-row);  color: var(--f-row); }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    padding: 2.5px 9px;
+    border-radius: 20px;
+    color: var(--surface);
+    white-space: nowrap;
+  }
+
+  .is-convert[data-form="text"] .badge { background: var(--f-text); }
+  .is-convert[data-form="obj"]  .badge { background: var(--f-obj); }
+  .is-convert[data-form="sql"]  .badge { background: var(--f-sql); }
+  .is-convert[data-form="row"]  .badge { background: var(--f-row); }
+
+  .card pre.line {
+    margin: 0 0 12px;
+    padding: 9px 12px;
+    background: var(--surface-2);
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--ink);
+    overflow-x: auto;
+  }
+
+  .io {
+    display: grid;
+    gap: 5px;
+  }
+
+  .io-row {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    gap: 10px;
+    align-items: baseline;
+  }
+
+  .io-val em.file {
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-2);
+  }
+
+  .io-key {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--muted);
+    padding-top: 1px;
+  }
+
+  .io-val {
+    font-size: 14px;
+    color: var(--ink-2);
+    min-width: 0;
+  }
+
+  .io-val strong { color: var(--ink); font-weight: 700; }
+  .io-val em {
+    font-style: normal;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+
+  .io-val .plain {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink);
+  }
+
+  /* ---------- 内部链路 ---------- */
+
+  .inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 6px;
+    margin-top: 11px;
+    padding-top: 11px;
+    border-top: 1px dashed var(--line);
+  }
+
+  .inner-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--muted);
+    margin-right: 2px;
+  }
+
+  .inner code {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .inner i {
+    font-style: normal;
+    color: var(--line-strong);
+    font-size: 11px;
+  }
+
+  /* ---------- 载荷 ---------- */
+
+  .payload {
+    margin-top: 11px;
+  }
+
+  .payload figcaption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+
+  .payload pre {
+    margin: 0;
+    padding: 11px 13px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--ink);
+    overflow-x: auto;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- 收尾 ---------- */
+
+  .recap {
+    margin-top: 40px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 22px 24px;
+  }
+
+  .recap h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    margin: 0 0 18px;
+    letter-spacing: .01em;
+  }
+
+  .morph {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+  }
+
+  .morph-move {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px 13px;
+    border-radius: 8px;
+    border: 1.5px solid var(--line-strong);
+    background: var(--ground);
+    min-width: 88px;
+  }
+
+  .morph-move .m-form {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .morph-move .m-what {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .morph-move.text { border-color: var(--f-text); }
+  .morph-move.text .m-form { color: var(--f-text); }
+  .morph-move.obj { border-color: var(--f-obj); }
+  .morph-move.obj .m-form { color: var(--f-obj); }
+  .morph-move.sql { border-color: var(--f-sql); }
+  .morph-move.sql .m-form { color: var(--f-sql); }
+  .morph-move.row { border-color: var(--f-row); }
+  .morph-move.row .m-form { color: var(--f-row); }
+
+  .arrow {
+    color: var(--line-strong);
+    font-size: 14px;
+    font-family: var(--font-mono);
+  }
+
+  .recap-note {
+    margin: 20px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+
+  .recap-note strong { color: var(--ink); }
+
+  .recap-files {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .recap-files h3 {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+
+  .recap-files ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 7px;
+  }
+
+  .recap-files li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 3px 10px;
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+
+  .recap-files code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* ---------- 窄屏 ---------- */
+
+  @media (max-width: 560px) {
+    .page { padding-block: 30px 64px; }
+    .step { padding-left: 42px; }
+    .flow::before { left: 12px; }
+    .num { width: 26px; height: 26px; font-size: 11px; top: 14px; }
+    .card { padding: 13px 14px 14px; }
+    .io-row { grid-template-columns: 1fr; gap: 0; }
+    .io-key { padding-top: 6px; }
+    .morph-move { min-width: 74px; padding: 8px 11px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--f-obj);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+</style>
+
+<div class="page">
+
+  <p class="eyebrow">ai_analytics · 链路追踪</p>
+  <h1>最近30天销售额最高的10个SKU是什么？</h1>
+  <p class="standfirst">一句话从终端走到终端，中途换了 5 次形态。每一步都标了：在哪个文件哪一行、吃什么、吐什么、用到了哪些<strong>主链路文件</strong>。</p>
+
+  <div class="origin">
+    <span class="origin-label">起点 · 终端</span>
+    <pre>uv run python scripts/ask_question.py "最近30天销售额最高的10个SKU是什么？"</pre>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="swatch text"></span>字符串</span>
+    <span class="legend-item"><span class="swatch obj"></span>Python 对象</span>
+    <span class="legend-item"><span class="swatch sql"></span>SQL</span>
+    <span class="legend-item"><span class="swatch row"></span>行列表</span>
+  </div>
+
+  <ol class="flow">
+
+    <!-- 1 -->
+    <li class="step" data-form="text">
+      <span class="num">1</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">scripts/ask_question.py:37-40</code>
+          <span class="tag text">字符串</span>
+        </div>
+        <p class="what">从命令行把问题<b>接进来</b>，顺手把住第一道门：没给问题、或给的是一串空白，就打印用法直接退出。</p>
+        <pre class="line">sys.argv[1]  ← 命令行里的那句话</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">终端上敲的 <em>uv run ... "最近30天…SKU是什么？"</em></span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>问题字符串</strong>：<span class="plain">"最近30天销售额最高的10个SKU是什么？"</span></span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">scripts/ask_question.py</em></span></div>
+        </div>
+      </div>
+    </li>
+
+    <!-- 2 -->
+    <li class="step" data-form="none">
+      <span class="num">2</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:42</code>
+          <span class="tag">设置</span>
+        </div>
+        <p class="what">把 <b>.env 里的 API key 搬进环境变量</b>。它只管搬运、不关心谁用 —— 后面谁要谁自己去取。</p>
+        <pre class="line">load_env_file(PROJECT_DIR / ".env")</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">项目根目录下的 <em>.env</em> 文件路径</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>没有返回值</strong>。只是一行行把 <span class="plain">KEY=VALUE</span> 塞进 <span class="plain">os.environ</span></span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">scripts/ask_question.py</em></span></div>
+        </div>
+      </div>
+    </li>
+
+    <!-- 3 -->
+    <li class="step" data-form="obj">
+      <span class="num">3</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:43</code>
+          <span class="tag obj">对象</span>
+        </div>
+        <p class="what">把三张 YAML 清单<b>一次性读进内存</b>，攒成一个随时能查的 catalog。</p>
+        <pre class="line">catalog = MetadataCatalog(PROJECT_DIR / "metadata")</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val"><em>metadata/</em> 目录路径</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>catalog 对象</strong>，肚里三张清单：<span class="plain">datasets / metrics / terms</span></span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/metadata/loader.py</em></span></div>
+        </div>
+        <div class="inner">
+          <span class="inner-label">内部</span>
+          <code>读 datasets.yaml</code><i>→</i><code>读 metrics.yaml</code><i>→</i><code>读 glossary.yaml</code>
+          <span class="inner-label" style="margin-left:6px">loader.py:21-23</span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 4 -->
+    <li class="step" data-form="obj">
+      <span class="num">4</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:44-47</code>
+          <span class="tag obj">对象</span>
+        </div>
+        <p class="what">造出<b>全项目唯一能碰数据的人</b>。此刻只是装配，先记住哪些表允许查。</p>
+        <pre class="line">runner = LocalQueryRunner(data/parquet, metadata/datasets.yaml)</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">两个路径：parquet 数据目录 + datasets.yaml</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>runner 对象</strong>，肚里装着表名白名单 <span class="plain">self.datasets</span></span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/query/local_runner.py</em></span></div>
+        </div>
+      </div>
+    </li>
+
+    <!-- 5 -->
+    <li class="step" data-form="obj">
+      <span class="num">5</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:48</code>
+          <span class="tag obj">对象</span>
+        </div>
+        <p class="what">把 catalog 交给解析器，<b>造出 parser</b>。注意：这一步只是装配，<b>还没发请求</b>。</p>
+        <pre class="line">parser = DeepSeekIntentParser(catalog)</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">catalog 对象</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>parser 对象</strong>，肚里装着已建好的 <span class="plain">self.client</span></span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/intent/deepseek.py</em></span></div>
+        </div>
+        <div class="inner">
+          <span class="inner-label">注意</span>
+          <span style="font-size:13px;color:var(--ink-2)">DeepSeek 的 key 是在这一步取走的 —— <code>deepseek.py:21</code></span>
+        </div>
+      </div>
+    </li>
+
+    <!-- 6 · 转换 -->
+    <li class="step is-convert" data-form="obj">
+      <span class="num">6</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:50</code>
+          <span class="badge">★ 形态转换</span>
+        </div>
+        <p class="what"><b>★ 真正的一次问答。</b>先用 catalog 检索相关元数据，再连同问题发给大模型，把它回来的 JSON 拼成 QuestionIntent 对象。</p>
+        <pre class="line">intent = parser.parse(question)</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">问题字符串</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>QuestionIntent 对象</strong> —— 字符串第一次变成对象</span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/intent/bailian.py</em> <em class="file">app/intent/models.py</em> <em class="file">app/metadata/loader.py</em></span></div>
+        </div>
+        <div class="inner">
+          <span class="inner-label">内部</span>
+          <code>catalog.search</code><i>→</i><code>_build_prompt</code><i>→</i><code>DeepSeek API</code><i>→</i><code>json.loads</code><i>→</i><code>QuestionIntent(...)</code>
+        </div>
+        <figure class="payload">
+          <figcaption>模型返回的意图（示意）</figcaption>
+          <pre>{
+  "metric": "sales_amount",
+  "metrics": ["sales_amount"],
+  "dimensions": ["seller_sku", "asin"],
+  "time_range": "last_30_days",
+  "sort": "descending",
+  "limit": 10,
+  "filters": {},
+  "needs_clarification": false
+}</pre>
+        </figure>
+      </div>
+    </li>
+
+    <!-- 7 -->
+    <li class="step" data-form="text">
+      <span class="num">7</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:52-53</code>
+          <span class="tag text">JSON 文本</span>
+        </div>
+        <p class="what">把上一步那个对象<b>翻回 JSON 打到屏幕</b> —— 这就是你看到的第一段输出「问题意图」。</p>
+        <pre class="line">print(json.dumps(intent.to_dict(), ensure_ascii=False, indent=2))</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">intent 对象</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>屏幕上第一段 JSON</strong>（标题「问题意图：」），给人看的</span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/intent/models.py</em></span></div>
+        </div>
+      </div>
+    </li>
+
+    <!-- 8 -->
+    <li class="step" data-form="none">
+      <span class="num">8</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:55-57</code>
+          <span class="tag">分支</span>
+        </div>
+        <p class="what"><b>一道闸门。</b>模型要是觉得问题不清楚，就打印它反问的那句话，然后<b>直接结束</b>，不往下查。</p>
+        <pre class="line">if intent.needs_clarification:</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val"><span class="plain">intent.needs_clarification</span> = <span class="plain">False</span></span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val">条件不成立，<strong>不 return，继续往下走</strong>（若为 True 就在这里结束，让用户补信息）</span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">scripts/ask_question.py</em></span></div>
+        </div>
+      </div>
+    </li>
+
+    <!-- 9 -->
+    <li class="step" data-form="obj">
+      <span class="num">9</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:59</code>
+          <span class="tag obj">对象</span>
+        </div>
+        <p class="what">把 runner 和 catalog <b>打包成 QuestionService</b>，一句话把「问题 + 意图」递进去。往后全在它肚里发生，主链路就此换人。</p>
+        <pre class="line">answer = QuestionService(runner, catalog).ask_with_intent(question, intent)</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">问题字符串 + intent 对象；<span class="plain">runner</span> 和 <span class="plain">catalog</span> 在第 3、4 步就造好了，这一行把它们递进去</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>AnalyticsAnswer 对象</strong>（下面三步都是它内部干的）</span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/questions/service.py</em></span></div>
+        </div>
+      </div>
+    </li>
+
+    <!-- 10 · 转换 -->
+    <li class="step is-convert" data-form="sql">
+      <span class="num">10</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">app/questions/service.py:81</code>
+          <span class="badge">★ 形态转换</span>
+        </div>
+        <p class="what"><b>★ 意图变成 SQL。</b>拿意图里的指标、维度、时间、排序去套模板，生成那条只读查询语句。</p>
+        <pre class="line">sql = self.sql_generator.generate(intent)</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">intent 对象</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>一条 SQL 字符串</strong>，<span class="plain">LIMIT 10</span> 已经写死在里面</span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/sql/generator.py</em> <em class="file">app/metadata/loader.py</em></span></div>
+        </div>
+        <div class="inner">
+          <span class="inner-label">三道检查</span>
+          <code>sales_amount 在指标字典里 ✓</code><code>time_range 是 last_30_days 且含 seller_sku ✓</code><code>指标属于白名单 ✓</code>
+        </div>
+        <figure class="payload">
+          <figcaption>generator.py:28-37 的模板，套上 limit=10</figcaption>
+          <pre>SELECT seller_sku, asin, MAX(brand) AS brand,
+       ROUND(SUM(TRY_CAST(ordered_product_sales AS DOUBLE)), 2) AS sales_amount,
+       SUM(units_ordered) AS units_sold
+FROM dws_sku_tag_day_us
+WHERE stat_dt &gt;= (SELECT MAX(stat_dt) - INTERVAL 29 DAY FROM dws_sku_tag_day_us)
+GROUP BY seller_sku, asin
+ORDER BY sales_amount DESC
+LIMIT 10</pre>
+        </figure>
+      </div>
+    </li>
+
+    <!-- 11 · 转换 -->
+    <li class="step is-convert" data-form="row">
+      <span class="num">11</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">service.py:89</code>
+          <span class="badge">★ 形态转换</span>
+        </div>
+        <p class="what"><b>★ SQL 变成数据。</b>交给第 4 步造好的 runner，真去 DuckDB 里跑一遍，拿回行列表。</p>
+        <pre class="line">rows = self.runner.execute(sql, max_rows=int(intent.limit or 1000))</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">SQL 字符串 + <span class="plain">max_rows=10</span></span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>list[dict]，10 行</strong> —— 只有这一步真正碰数据</span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/query/local_runner.py</em></span></div>
+        </div>
+        <div class="inner">
+          <span class="inner-label">内部</span>
+          <code>两道正则校验</code><i>→</i><code>外面套一层 LIMIT</code><i>→</i><code>duckdb.connect()</code><i>→</i><code>parquet 注册成视图</code><i>→</i><code>读 dws_sku_tag_day_us.parquet</code>
+        </div>
+        <figure class="payload">
+          <figcaption>返回的行长这样（示意数据，非真实查询结果）</figcaption>
+          <pre>[
+  {"seller_sku": "ABC-01", "asin": "B0XXXXXXXX", "brand": "Anker",
+   "sales_amount": 12345.67, "units_sold": 89},
+  …
+]</pre>
+        </figure>
+      </div>
+    </li>
+
+    <!-- 12 -->
+    <li class="step" data-form="obj">
+      <span class="num">12</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">service.py:91-101</code>
+          <span class="tag obj">对象</span>
+        </div>
+        <p class="what">把问题、状态、SQL、行、检索留痕<b>一起装进一个对象</b>返回，别的概不夹带。</p>
+        <pre class="line">return AnalyticsAnswer(question=…, status="success", sql=sql, rows=rows, …)</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val"><span class="plain">sql</span> / <span class="plain">rows</span> / <span class="plain">datasets_for(intent)</span> 得到的 <span class="plain">["dws_sku_tag_day_us"]</span> / 指标定义</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>AnalyticsAnswer 对象</strong>，<span class="plain">status="success"</span></span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/questions/models.py</em> <em class="file">app/questions/service.py</em></span></div>
+        </div>
+      </div>
+    </li>
+
+    <!-- 13 -->
+    <li class="step" data-form="text">
+      <span class="num">13</span>
+      <div class="card">
+        <div class="card-head">
+          <code class="loc">ask_question.py:61</code>
+          <span class="tag text">JSON 文本</span>
+        </div>
+        <p class="what">把结果对象打成 JSON 输出 —— 这就是终端上那段「问数结果」。</p>
+        <pre class="line">print(json.dumps(answer.to_dict(), ensure_ascii=False, indent=2))</pre>
+        <div class="io">
+          <div class="io-row"><span class="io-key">输入</span><span class="io-val">answer 对象</span></div>
+          <div class="io-row"><span class="io-key">输出</span><span class="io-val"><strong>终端上第二段 JSON</strong>（标题「问数结果：」），里面含 <span class="plain">sql</span> 和 <span class="plain">rows</span> —— 终点</span></div>
+          <div class="io-row"><span class="io-key">主链路</span><span class="io-val"><em class="file">app/questions/models.py</em></span></div>
+        </div>
+      </div>
+    </li>
+
+  </ol>
+
+  <section class="recap">
+    <h2>五次形态变化</h2>
+    <div class="morph">
+      <div class="morph-move text"><span class="m-form">字符串</span><span class="m-what">问题</span></div>
+      <span class="arrow">▶</span>
+      <div class="morph-move obj"><span class="m-form">对象</span><span class="m-what">意图</span></div>
+      <span class="arrow">▶</span>
+      <div class="morph-move sql"><span class="m-form">SQL</span><span class="m-what">查询语句</span></div>
+      <span class="arrow">▶</span>
+      <div class="morph-move row"><span class="m-form">行列表</span><span class="m-what">数据</span></div>
+      <span class="arrow">▶</span>
+      <div class="morph-move obj"><span class="m-form">对象</span><span class="m-what">答案</span></div>
+      <span class="arrow">▶</span>
+      <div class="morph-move text"><span class="m-form">JSON</span><span class="m-what">屏幕</span></div>
+    </div>
+    <p class="recap-note">五次变化里，只有 <strong>第 6 步「字符串 → 对象」靠大模型</strong>（猜意图）；剩下的「对象 → SQL → 数据 → 答案」全是<strong>确定性代码</strong> —— 同一份意图跑一百遍，出来的 SQL 和数字都一样。</p>
+
+    <div class="recap-files">
+      <h3>主链路文件的出场次数</h3>
+      <ul>
+        <li><code>app/metadata/loader.py</code><span>3 次 · 第 3、6、10 步 —— 被反复借用的底座</span></li>
+        <li><code>app/query/local_runner.py</code><span>2 次 · 第 4 步造出来，第 11 步用它</span></li>
+        <li><code>其余七个文件</code><span>各出场 1 次</span></li>
+      </ul>
+    </div>
+  </section>
+
+</div>

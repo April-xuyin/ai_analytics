@@ -1,0 +1,49 @@
+version: 1
+examples:
+  - id: shop_sales_topn
+    question: 最近30天销售额排名前3的店铺是什么？
+    aliases: [店铺销售排名, 哪个店铺卖得最好]
+    metrics: [sales_amount]
+    dimensions: [shop_code]
+    dataset: dws_sku_tag_day_us
+    notes: 店铺维度只能选择包含 shop_code 的数据集。
+
+  - id: overall_refund_rate
+    question: 近一周整体退款率是多少？
+    aliases: [退款金额占销售额的比例, 整体退货率]
+    metrics: [refund_rate]
+    dimensions: []
+    dataset: dws_brand_day_us
+    notes: 退款率必须使用退款金额合计除以销售额合计，不能简单平均。
+
+  - id: brand_multi_metrics
+    question: 最近30天各品牌的销售额、订单数和销量分别是多少？
+    aliases: [品牌经营概况, 各品牌卖了多少钱多少单多少件]
+    metrics: [sales_amount, order_count, units_sold]
+    dimensions: [brand]
+    dataset: dws_brand_day_us
+    notes: 品牌日表可在统一粒度上组合这些基础指标。
+
+  - id: sku_monthly_sales_topn
+    question: 2026年8月销售额最高的10个SKU是什么？
+    aliases: [指定月份SKU销售排名, 月度商品销售排行]
+    metrics: [sales_amount]
+    dimensions: [seller_sku, asin]
+    dataset: dws_sku_tag_day_us
+    notes: 经营自然月销售额使用日事实表的 stat_dt，不是上架30天窗口指标。
+
+  - id: sku_lifecycle_target
+    question: 上架满30天但销量没有达到20单的SKU有哪些？
+    aliases: [新品30天销量达标, SKU生命周期]
+    metrics: [sku_units_30d]
+    dimensions: [seller_sku, asin, listing_date]
+    dataset: ads_aws_sku_period_sales
+    notes: 使用预计算的上架30天窗口，不对日数据重复累加。
+
+  - id: north_star_daily
+    question: 最近30天每天的高价值订单数和目标达成率是多少？
+    aliases: [北极星完成情况, 高价值订单目标]
+    metrics: [high_value_order_cnt, north_star_achievement_rate]
+    dimensions: [stat_dt]
+    dataset: dws_brand_day_us
+    notes: 需要关联 dim_north_star_target 获取自然月每日目标。

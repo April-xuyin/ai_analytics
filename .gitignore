@@ -1,0 +1,9 @@
+.venv/
+.env
+data/raw/
+data/.cleaned/
+data/parquet/
+*.duckdb
+__pycache__/
+.pytest_cache/
+logs/

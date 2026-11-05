@@ -1,0 +1,150 @@
+version: 1
+description: DeepSeek到通用查询计划的自然语言组合评测；调用模型但不执行业务SQL。
+
+questions:
+  - id: generic_001
+    question: 最近30天销售额排名前3的店铺是什么？
+    paraphrases: [过去一个月店铺销售前三名]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [shop_code]
+    expected_time_range: last_30_days
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [GROUP BY shop_code, ORDER BY sales_amount DESC, LIMIT 3]
+
+  - id: generic_002
+    question: 近一周整体退款率是多少？
+    paraphrases: [最近7天退款金额占销售额的比例]
+    expected_statuses: [success]
+    expected_metrics: [refund_rate]
+    expected_dimensions: []
+    expected_time_range: last_7_days
+    expected_dataset: dws_brand_day_us
+    sql_contains: [INTERVAL 6 DAY, NULLIF]
+
+  - id: generic_003
+    question: 最近90天各品牌销量是多少？
+    paraphrases: [近三个月每个品牌卖了多少件]
+    expected_statuses: [success]
+    expected_metrics: [units_sold]
+    expected_dimensions: [brand]
+    expected_time_range: last_90_days
+    expected_dataset: dws_brand_day_us
+    sql_contains: [INTERVAL 89 DAY, GROUP BY brand]
+
+  - id: generic_004
+    question: 2026年8月销售额最高的10个SKU是什么？
+    paraphrases: [2026年8月份SKU销售前十名]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [seller_sku, asin]
+    expected_filters: {stat_month: 2026-08}
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [2026-08, LIMIT 10]
+
+  - id: generic_005
+    question: 上周各品牌销售额是多少？
+    paraphrases: [前一个完整自然周每个品牌卖了多少钱]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [brand]
+    expected_time_range: previous_complete_week
+    expected_dataset: dws_brand_day_us
+    sql_contains: [WEEKOFYEAR, GROUP BY brand]
+
+  - id: generic_006
+    question: 上个月各品牌退款金额是多少？
+    paraphrases: [上月每个品牌退了多少钱]
+    expected_statuses: [success]
+    expected_metrics: [refund_amount]
+    expected_dimensions: [brand]
+    expected_time_range: previous_complete_month
+    expected_dataset: dws_brand_day_us
+    sql_contains: [INTERVAL 1 MONTH, GROUP BY brand]
+
+  - id: generic_007
+    question: 最近30天各品牌的销售额、订单数和销量分别是多少？
+    paraphrases: [近一个月各品牌卖了多少钱、多少单和多少件]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount, order_count, units_sold]
+    expected_dimensions: [brand]
+    expected_time_range: last_30_days
+    expected_dataset: dws_brand_day_us
+    sql_contains: [AS sales_amount, AS order_count, AS units_sold]
+
+  - id: generic_008
+    question: 最近7天各SKU的销售额和退款金额是多少？
+    paraphrases: [过去7天每个商品的销售金额和退款金额]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount, refund_amount]
+    expected_dimensions: [seller_sku, asin]
+    expected_time_range: last_7_days
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [GROUP BY seller_sku, asin, AS refund_amount]
+
+  - id: generic_009
+    question: 最近30天Cuspin品牌销售额最高的5个SKU是什么？
+    paraphrases: [Cuspin近一个月卖得最好的5个商品]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [seller_sku, asin]
+    expected_time_range: last_30_days
+    expected_filters: {brand: Cuspin}
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: ["brand = 'Cuspin'", LIMIT 5]
+
+  - id: generic_010
+    question: 最近30天销售额超过10000的SKU有哪些？
+    paraphrases: [近一个月销售金额大于一万的商品]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [seller_sku, asin]
+    expected_time_range: last_30_days
+    expected_filters: {sales_amount_min: "10000"}
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [HAVING sales_amount > 10000]
+
+  - id: generic_011
+    question: 最近90天销售额最低的5个品牌是什么？
+    paraphrases: [近三个月销售金额倒数5名的品牌]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [brand]
+    expected_time_range: last_90_days
+    expected_dataset: dws_brand_day_us
+    sql_contains: [ORDER BY sales_amount ASC, LIMIT 5]
+
+  - id: generic_012
+    question: 最近7天每天的退款率是多少？
+    paraphrases: [近一周按天看退款比例]
+    expected_statuses: [success]
+    expected_metrics: [refund_rate]
+    expected_dimensions: [stat_dt]
+    expected_time_range: last_7_days
+    expected_dataset: dws_brand_day_us
+    sql_contains: [GROUP BY stat_dt, NULLIF]
+
+  - id: generic_013
+    question: 本周各店铺销售额是多少？
+    paraphrases: [这周每个店铺卖了多少钱]
+    expected_statuses: [success]
+    expected_metrics: [sales_amount]
+    expected_dimensions: [shop_code]
+    expected_time_range: current_data_week
+    expected_dataset: dws_sku_tag_day_us
+    sql_contains: [WEEKOFYEAR, GROUP BY shop_code]
+
+  - id: generic_014
+    question: 哪个品牌销售额最高？
+    paraphrases: [销售额最好的品牌是谁]
+    expected_statuses: [clarification_needed]
+
+  - id: generic_015
+    question: 最近30天各店铺订单数是多少？
+    paraphrases: [近一个月每个店铺卖了多少单]
+    expected_statuses: [clarification_needed, unsupported]
+
+  - id: generic_016
+    question: 最近30天按运营人员统计销售额是多少？
+    paraphrases: [近一个月按运营负责人看销售金额]
+    expected_statuses: [clarification_needed, unsupported]

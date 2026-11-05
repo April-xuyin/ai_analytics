@@ -1,0 +1,20 @@
+version: 1
+terms:
+  - term: AWS US
+    aliases: [美国站, US站, Amazon US]
+    meaning: 仅包含 shop_code 以 -US 结尾的店铺。
+  - term: SKU
+    aliases: [seller_sku, 商品 SKU]
+    meaning: 商品库存单位；SKU 级主键通常与 asin 组合使用。
+  - term: ASIN
+    aliases: [asin]
+    meaning: Amazon 商品标识。
+  - term: 高价值订单
+    aliases: [北极星订单, high value order]
+    meaning: listing 标价 >= 60 美元、毛利率 >= 20%、评分 >= 4.0 的订单项对应订单。
+  - term: 达标 SKU
+    aliases: [成功 SKU, success tier]
+    meaning: 上架满 30 天且 30 天销量达到 20 单；未满 30 天为待评估。
+  - term: 最近30天
+    aliases: [近30天, 30d]
+    meaning: 若问题查询日级表，默认使用 stat_dt 的最近连续 30 个自然日；若查询周期 ADS 表，使用字段名带 30d 的预计算窗口。
