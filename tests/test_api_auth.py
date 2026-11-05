@@ -20,11 +20,11 @@ def test_health_does_not_require_api_token(monkeypatch) -> None:
 
 def test_operator_token_gets_configured_shop_scope(monkeypatch) -> None:
     monkeypatch.setenv("OPERATOR_API_TOKEN", "operator-token")
-    monkeypatch.setenv("OPERATOR_SHOPS", "CuspinArtGallery-US, VG Artisan-US")
+    monkeypatch.setenv("OPERATOR_SHOPS", "shop-a, shop-b")
     principal = authenticate("operator-token")
     assert principal is not None
     assert principal.role == "operator"
-    assert principal.shops == ("CuspinArtGallery-US", "VG Artisan-US")
+    assert principal.shops == ("shop-a", "shop-b")
 
 
 def test_metrics_requires_admin_token(monkeypatch) -> None:
@@ -39,9 +39,9 @@ def test_metrics_requires_admin_token(monkeypatch) -> None:
 
 def test_me_returns_operator_scope(monkeypatch) -> None:
     monkeypatch.setenv("OPERATOR_API_TOKEN", "operator-token")
-    monkeypatch.setenv("OPERATOR_SHOPS", "CuspinArtGallery-US")
+    monkeypatch.setenv("OPERATOR_SHOPS", "shop-a")
     response = client.get("/me", headers={"X-API-Key": "operator-token"})
     assert response.status_code == 200
     assert response.json() == {
-        "name": "operator", "role": "operator", "shops": ["CuspinArtGallery-US"]
+        "name": "operator", "role": "operator", "shops": ["shop-a"]
     }

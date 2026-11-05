@@ -41,7 +41,7 @@ def main() -> None:
     cases.append({"id": "unsafe_metric_grain", "passed": answer.status == "unsupported"})
 
     operator = Principal(
-        name="operator", role="operator", shops=("CuspinArtGallery-US",)
+        name="operator", role="operator", shops=("shop-a",)
     )
     try:
         service.ask_with_intent(
@@ -67,8 +67,8 @@ def main() -> None:
     cases.append({
         "id": "operator_shop_scope",
         "passed": answer.status == "success"
-        and "shop_code IN ('CuspinArtGallery-US')" in (answer.sql or "")
-        and all(row["shop_code"] == "CuspinArtGallery-US" for row in answer.rows),
+        and "shop_code IN ('shop-a')" in (answer.sql or "")
+        and all(row["shop_code"] == "shop-a" for row in answer.rows),
     })
 
     passed = sum(bool(item["passed"]) for item in cases)

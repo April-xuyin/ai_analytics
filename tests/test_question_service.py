@@ -64,9 +64,9 @@ def test_operator_scope_is_added_to_shop_aware_sql() -> None:
             metric="sales_amount", dimensions=["seller_sku", "asin"],
             time_range="last_30_days", sort="descending", limit=10,
         ),
-        principal=Principal(name="operator", role="operator", shops=("CuspinArtGallery-US",)),
+        principal=Principal(name="operator", role="operator", shops=("shop-a",)),
     )
-    assert "shop_code IN ('CuspinArtGallery-US')" in answer.sql
+    assert "shop_code IN ('shop-a')" in answer.sql
 
 
 def test_operator_cannot_query_aggregate_without_shop_dimension() -> None:
@@ -78,7 +78,7 @@ def test_operator_cannot_query_aggregate_without_shop_dimension() -> None:
                 metric="sales_amount", dimensions=["brand"],
                 time_range="last_30_days", sort="descending", limit=5,
             ),
-            principal=Principal(name="operator", role="operator", shops=("CuspinArtGallery-US",)),
+            principal=Principal(name="operator", role="operator", shops=("shop-a",)),
         )
 
 
@@ -113,11 +113,11 @@ def test_operator_scope_applies_to_generic_shop_ranking() -> None:
             metric="sales_amount", dimensions=["shop_code"],
             time_range="last_30_days", sort="descending", limit=3,
         ),
-        principal=Principal(name="operator", role="operator", shops=("CuspinArtGallery-US",)),
+        principal=Principal(name="operator", role="operator", shops=("shop-a",)),
     )
     assert answer.status == "success"
-    assert "shop_code IN ('CuspinArtGallery-US')" in answer.sql
-    assert all(row["shop_code"] == "CuspinArtGallery-US" for row in answer.rows)
+    assert "shop_code IN ('shop-a')" in answer.sql
+    assert all(row["shop_code"] == "shop-a" for row in answer.rows)
 
 
 def test_query_failure_is_audited(tmp_path) -> None:

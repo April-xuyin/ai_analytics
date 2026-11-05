@@ -190,10 +190,10 @@ def test_shop_filter_forces_shop_aware_dataset() -> None:
     sql = generator.generate(QuestionIntent(
         metric="sales_amount",
         time_range="last_7_days",
-        filters={"shop_code": "CuspinArtGallery-US"},
+        filters={"shop_code": "shop-a"},
     ))
     assert "FROM dws_sku_tag_day_us" in sql
-    assert "shop_code = 'CuspinArtGallery-US'" in sql
+    assert "shop_code = 'shop-a'" in sql
 
 
 def test_unsupported_filter_is_not_silently_ignored() -> None:
